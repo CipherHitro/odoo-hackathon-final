@@ -1,0 +1,20 @@
+name: odoo-final-postgres
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: odoo-final-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: odoo-final_db
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - odoo_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  odoo_postgres_data:
