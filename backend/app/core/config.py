@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     # How long a password reset OTP stays valid (minutes) - shown in the email too
     OTP_EXPIRE_MINUTES: int = 10
     
+    REDIS_URL: str = "redis://localhost:6379"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
