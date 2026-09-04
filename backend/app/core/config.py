@@ -23,6 +23,9 @@ class Settings(BaseSettings):
 
     # How long a password reset OTP stays valid (minutes) - shown in the email too
     OTP_EXPIRE_MINUTES: int = 10
+
+    # How long the single-use reset token (issued after OTP verification) stays valid
+    RESET_TOKEN_EXPIRE_MINUTES: int = 15
     
     REDIS_URL: str = "redis://localhost:6379"
 

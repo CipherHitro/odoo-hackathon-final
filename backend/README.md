@@ -58,6 +58,9 @@ Set `APP_ENV` in `.env`:
 | POST | `/auth/login` | Login (body: `email`, `password`) and sets the auth cookie |
 | GET | `/auth/me` | Return the current authenticated user (reads the auth cookie) |
 | POST | `/auth/logout` | Clear the auth cookie |
+| POST | `/auth/forgot-password` | Send a 6-digit OTP to the user's email (hashed + max 5 attempts, stored in Redis) |
+| POST | `/auth/verify-otp` | Verify the OTP and receive a single-use reset token |
+| POST | `/auth/reset-password` | Reset the password using the reset token (body: `reset_token`, `new_password`) |
 
 ## Testing the email service
 
@@ -75,6 +78,9 @@ uv run python -m app.test_email welcome you@example.com   # custom recipient
 Templates live in `app/services/email/templates/`; the send functions are in
 `app/services/email/service.py`. `APP_NAME` and `OTP_EXPIRE_MINUTES` in `.env`
 control what the emails look like and how long the code stays valid.
+The forgot-password flow stores the hashed OTP and the single-use reset token
+in Redis (`app/api/users/redis_repository.py`); `RESET_TOKEN_EXPIRE_MINUTES`
+controls how long the reset token stays valid after OTP verification.
 
 ## For maintainers: changing the schema
 

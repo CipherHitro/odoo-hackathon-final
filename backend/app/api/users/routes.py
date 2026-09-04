@@ -6,7 +6,17 @@ from app.api.users.controller import UserController
 from app.core.cookies import clear_auth_cookie
 from app.core.database import get_db
 from app.models.user import User
-from app.schemas.user import AuthResponse, UserLogin, UserRegister, UserResponse
+from app.schemas.user import (
+    AuthResponse,
+    ForgotPasswordRequest,
+    MessageResponse,
+    ResetPasswordRequest,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+    VerifyOTPRequest,
+    VerifyOTPResponse,
+)
 
 
 router = APIRouter(
@@ -75,3 +85,41 @@ async def logout(
     return {
         "message": "Logged out successfully"
     }
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def forgot_password(
+    data: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+
+    return await UserController.forgot_password(db, data)
+
+
+@router.post(
+    "/verify-otp",
+    response_model=VerifyOTPResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def verify_otp(
+    data: VerifyOTPRequest,
+):
+
+    return await UserController.verify_otp(data)
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def reset_password(
+    data: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+
+    return await UserController.reset_password(db, data)

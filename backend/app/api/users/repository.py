@@ -50,3 +50,15 @@ class UserRepository:
         await db.refresh(user)
 
         return user
+
+    @staticmethod
+    async def update_password(
+        db: AsyncSession,
+        user: User,
+        password_hash: str,
+    ) -> None:
+
+        user.password_hash = password_hash
+
+        db.add(user)
+        await db.commit()

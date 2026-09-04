@@ -56,3 +56,8 @@ def decode_access_token(token: str) -> dict:
 def generate_otp(length: int = 6) -> str:
     """Generate a cryptographically secure numeric OTP (default: 6 digits)."""
     return "".join(secrets.choice(_OTP_DIGITS) for _ in range(length))
+
+
+def generate_reset_token() -> str:
+    """Generate a cryptographically secure, URL-safe single-use reset token."""
+    return secrets.token_urlsafe(32)
