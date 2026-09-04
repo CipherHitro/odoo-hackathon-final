@@ -41,3 +41,108 @@ export const registerUser = async (userData) => {
     throw error;
   }
 };
+
+export const forgotPassword = async (email) => {
+  try {
+    const response = await fetch('/auth/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to request password reset');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const verifyOtp = async (email, otp) => {
+  try {
+    const response = await fetch('/auth/verify-otp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to verify OTP');
+    }
+
+    return data; // contains reset_token
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const resetPassword = async (reset_token, new_password) => {
+  try {
+    const response = await fetch('/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ reset_token, new_password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to reset password');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    const response = await fetch('/auth/logout', {
+      method: 'POST',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Logout failed');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getCurrentUser = async () => {
+  try {
+    const response = await fetch('/auth/me', {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to fetch user');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
