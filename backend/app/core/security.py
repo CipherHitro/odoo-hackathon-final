@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import secrets
 
 import jwt
 from pwdlib import PasswordHash
@@ -7,6 +8,8 @@ from app.core.config import settings
 
 
 password_hash = PasswordHash.recommended()
+
+_OTP_DIGITS = "0123456789"
 
 
 def hash_password(password: str) -> str:
@@ -48,3 +51,8 @@ def decode_access_token(token: str) -> dict:
         settings.JWT_SECRET_KEY,
         algorithms=[settings.JWT_ALGORITHM],
     )
+
+
+def generate_otp(length: int = 6) -> str:
+    """Generate a cryptographically secure numeric OTP (default: 6 digits)."""
+    return "".join(secrets.choice(_OTP_DIGITS) for _ in range(length))

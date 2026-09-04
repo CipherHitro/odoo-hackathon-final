@@ -59,6 +59,23 @@ Set `APP_ENV` in `.env`:
 | GET | `/auth/me` | Return the current authenticated user (reads the auth cookie) |
 | POST | `/auth/logout` | Clear the auth cookie |
 
+## Testing the email service
+
+The email service (Resend) sends two emails: a **welcome email** and a **password
+reset OTP** (6-digit code). Send them to yourself with the manual test script —
+it uses the `RESEND_*` credentials from `.env`:
+
+```bash
+uv run python -m app.test_email                # send both emails
+uv run python -m app.test_email welcome        # welcome email only
+uv run python -m app.test_email reset          # password reset OTP only
+uv run python -m app.test_email welcome you@example.com   # custom recipient
+```
+
+Templates live in `app/services/email/templates/`; the send functions are in
+`app/services/email/service.py`. `APP_NAME` and `OTP_EXPIRE_MINUTES` in `.env`
+control what the emails look like and how long the code stays valid.
+
 ## For maintainers: changing the schema
 
 ```bash

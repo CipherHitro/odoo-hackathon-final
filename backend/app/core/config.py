@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     # "development" or "production" - controls cookie security (and other env-specific behaviour)
     APP_ENV: str = "development"
 
+    # App identity - used in email subjects and templates
+    APP_NAME: str = "Odoo-Final-Hackathon"
+
     DATABASE_URL: str
 
     JWT_SECRET_KEY: str
@@ -15,6 +18,12 @@ class Settings(BaseSettings):
     COOKIE_HTTPONLY: bool = True
     COOKIE_SAMESITE: str = "lax"
 
+    RESEND_API_KEY: str
+    RESEND_FROM_EMAIL: str
+
+    # How long a password reset OTP stays valid (minutes) - shown in the email too
+    OTP_EXPIRE_MINUTES: int = 10
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
