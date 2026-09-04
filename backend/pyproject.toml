@@ -14,3 +14,7 @@ dependencies = [
     "pyjwt>=2.13.0",
     "sqlalchemy>=2.0.52",
 ]
+
+# Explicit entrypoint for the FastAPI CLI (`uv run fastapi dev` / `uv run fastapi run`)
+[tool.fastapi]
+entrypoint = "main:app"

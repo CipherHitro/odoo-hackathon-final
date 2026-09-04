@@ -1,33 +1,54 @@
 # Backend
 
-FastAPI + SQLAlchemy (async) + Alembic async migrations + Argon2 password hashing +
+FastAPI + SQLAlchemy (async) + Alembic migrations + Argon2 password hashing +
 JWT auth delivered via httpOnly cookies.
 
-## Setup
+## Prerequisites
+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) — installs the correct Python version automatically
+- [Docker](https://docs.docker.com/get-docker/) — runs the local Postgres database
+
+## Getting started (fresh clone)
 
 ```bash
-uv init
+# 1. clone the repo
+git clone <repo-url>
+cd odoo-final/backend
+
+# 2. install dependencies (creates .venv from uv.lock, Python version included)
 uv sync
-```
 
-## Run the database
+# 3. create your local .env (it is gitignored)
+cp .env.example .env
 
-```bash
+# 4. start the Postgres database
 docker compose up -d
+
+# 5. create the schema in your database (migration files are already in the repo)
+uv run alembic upgrade head
+
+# 6. run the API (auto-reloads on code changes)
+uv run fastapi dev
 ```
 
-## Run the server
+Then open http://127.0.0.1:8000/docs for the Swagger UI.
 
-```bash
-uv run uvicorn main:app --reload
-```
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `uv run fastapi dev` | run the API with auto-reload (dev server on http://127.0.0.1:8000) |
+| `uv run fastapi run` | run the API in production mode (no reload) |
+| `docker compose up -d` | start the Postgres container |
+| `docker compose down` | stop the Postgres container |
+| `uv run alembic upgrade head` | apply pending migrations |
 
 ## Environment modes
 
 Set `APP_ENV` in `.env`:
 
-- `development` - cookie is NOT marked `Secure` (works over plain HTTP on localhost）。
-- `production` - cookie is marked `Secure` (HTTPS only) automatically。
+- `development` — cookie is NOT marked `Secure` (works over plain HTTP on localhost)
+- `production` — cookie is marked `Secure` (HTTPS only) automatically
 
 ## API endpoints
 
@@ -35,15 +56,18 @@ Set `APP_ENV` in `.env`:
 |--------|------|-------------|
 | POST | `/auth/register` | Register a new user (body: `name`, `email`, `password`) and sets the auth cookie |
 | POST | `/auth/login` | Login (body: `email`, `password`) and sets the auth cookie |
-| GET | `/auth/me` | Return the current authenticated user (reads the auth cookie） |
+| GET | `/auth/me` | Return the current authenticated user (reads the auth cookie) |
 | POST | `/auth/logout` | Clear the auth cookie |
 
-## Migrations
+## For maintainers: changing the schema
 
 ```bash
-# after changing app/models/, generate a new migration
+# after changing app/models/, generate a new migration file
 uv run alembic revision --autogenerate -m "describe the change"
 
-# apply pending migrations
+# apply it to your database
 uv run alembic upgrade head
 ```
+
+Commit the generated file in `migrations/versions/` — everyone else only ever needs
+`uv run alembic upgrade head` to pick it up.
