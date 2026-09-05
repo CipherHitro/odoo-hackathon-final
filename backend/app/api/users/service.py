@@ -4,6 +4,7 @@ from app.api.users.redis_repository import RedisRepository
 from app.api.users.repository import UserRepository
 from app.core.config import settings
 from app.core.exceptions import (
+    EmailDeliveryError,
     InactiveUserError,
     InvalidCredentialsError,
     InvalidOTPError,
@@ -107,11 +108,17 @@ class PasswordResetService:
             code_hash=hash_password(otp),
         )
 
-        await send_password_reset_otp(
-            to=user.email,
-            name=user.name,
-            otp=otp,
-        )
+        try:
+            await send_password_reset_otp(
+                to=user.email,
+                name=user.name,
+                otp=otp,
+            )
+        except Exception as exc:
+            await RedisRepository.delete_otp(user.email)
+            raise EmailDeliveryError(
+                f"Failed to send verification email: {exc}"
+            ) from exc
 
     @staticmethod
     async def verify_otp(email: str, otp: str) -> str:

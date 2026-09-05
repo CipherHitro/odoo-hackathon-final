@@ -45,7 +45,7 @@ class RedisRepository:
                 "attempts": OTP_MAX_ATTEMPTS,
             },
         )
-        await redis_client.expire(key, OTP_TTL_SECONDS)
+        await redis_client.expire(key, settings.OTP_EXPIRE_MINUTES * 60)
 
     @staticmethod
     async def get_otp(email: str) -> dict | None:

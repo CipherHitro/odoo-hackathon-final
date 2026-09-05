@@ -5,6 +5,7 @@ from app.api.users.service import PasswordResetService, UserService
 from app.core.config import settings
 from app.core.cookies import set_auth_cookie
 from app.core.exceptions import (
+    EmailDeliveryError,
     InactiveUserError,
     InvalidCredentialsError,
     InvalidOTPError,
@@ -98,10 +99,15 @@ class UserController:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=str(exc),
             ) from exc
+        except EmailDeliveryError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=str(exc),
+            ) from exc
 
+        unit = "minute" if settings.OTP_EXPIRE_MINUTES == 1 else "minutes"
         return MessageResponse(
-            message="OTP sent to your email. It expires in "
-            f"{settings.OTP_EXPIRE_MINUTES} minutes."
+            message=f"OTP sent to your email. It expires in {settings.OTP_EXPIRE_MINUTES} {unit}."
         )
 
     @staticmethod

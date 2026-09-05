@@ -32,3 +32,7 @@ class InvalidResetTokenError(AppError):
 
 class InactiveUserError(AppError):
     """Raised when a user account is inactive."""
+
+
+class EmailDeliveryError(AppError):
+    """Raised when the email service fails to deliver an email."""

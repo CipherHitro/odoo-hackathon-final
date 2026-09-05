@@ -219,6 +219,87 @@ h2 {
   color: var(--primary-blue);
 }
 
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
+  animation: fadeIn 0.3s ease;
+}
+
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #16a34a;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.otp-timer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding: 0 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.timer-text {
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+}
+
+.timer-text strong {
+  color: var(--primary-blue);
+  font-variant-numeric: tabular-nums;
+  margin-left: 2px;
+}
+
+.timer-warning strong {
+  color: #ef4444 !important;
+}
+
+.text-expired {
+  color: #ef4444 !important;
+  font-weight: 600;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary-blue);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.btn-link:hover {
+  color: var(--hover-blue);
+}
+
 .btn {
   width: 100%;
   padding: 0.875rem;
