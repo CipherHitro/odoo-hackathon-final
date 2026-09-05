@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, logoutUser } from '../api/auth';
+import { getCurrentUser } from '../api/auth';
+import Navbar from './Navbar';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,51 +24,74 @@ const Dashboard = () => {
     fetchUser();
   }, [navigate]);
 
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      navigate('/');
-    } catch (err) {
-      console.error('Logout failed', err);
-      navigate('/');
-    }
-  };
-
   if (loading) {
     return (
-      <div className="bg-waves" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <p style={{ color: 'var(--text-primary)', fontSize: '1.2rem' }}>Loading...</p>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--neutral-50)' }}>
+        <p style={{ color: 'var(--neutral-600)', fontSize: 'var(--text-base)' }}>Loading workspace...</p>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="bg-waves">
-        <div className="wave"></div>
-        <div className="wave"></div>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', width: '100%' }}>
-        <div className="dashboard-container" style={{ margin: '2rem' }}>
-          <div className="dashboard-header">
-            <h2>Dashboard</h2>
-            <button onClick={handleLogout} className="btn btn-outline" style={{ width: 'auto', padding: '0.5rem 1rem' }}>
-              Logout
-            </button>
+    <div className="app-layout-shell">
+      <Navbar activeModule="employees" />
+      <main className="app-layout-main">
+        <div style={{
+          background: 'var(--neutral-0)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--neutral-200)',
+          boxShadow: 'var(--shadow-sm)',
+          padding: '32px',
+          marginTop: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div>
+              <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, color: 'var(--neutral-900)', margin: 0 }}>
+                Employees Overview
+              </h1>
+              <p style={{ color: 'var(--neutral-600)', fontSize: 'var(--text-sm)', marginTop: '4px', margin: 0 }}>
+                Manage team directory, department assignments, and working schedules.
+              </p>
+            </div>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '4px 10px',
+              borderRadius: '9999px',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 600,
+              backgroundColor: 'var(--color-primary-light)',
+              color: 'var(--color-primary)'
+            }}>
+              Active Module: Employees
+            </span>
           </div>
-          <div className="dashboard-content">
-            <p>Welcome, <strong>{user?.name}</strong>! You have successfully authenticated.</p>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-              Email: {user?.email}
+
+          <div style={{
+            padding: '24px',
+            backgroundColor: 'var(--neutral-50)',
+            border: '1px dashed var(--neutral-300)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--neutral-600)',
+            fontSize: 'var(--text-sm)',
+            lineHeight: '22px'
+          }}>
+            <p style={{ margin: 0 }}>
+              The <strong>Navbar</strong> is now ready and active. It features:
             </p>
-            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>
-              This is a placeholder for the future dashboard implementation.
-            </p>
+            <ul style={{ margin: '10px 0 0 20px', padding: 0 }}>
+              <li><strong>HR Monogram Badge:</strong> Quick home button.</li>
+              <li><strong>Dropdown Menus:</strong> Employees ▾, Contracts ▾, Time Off ▾ with direct route links.</li>
+              <li><strong>Direct Tabs:</strong> Attendance and Payroll.</li>
+              <li><strong>Attendance Indicator:</strong> Red box status widget (matching wireframe) with one-click check-in/check-out toggle.</li>
+              <li><strong>User Avatar Menu:</strong> Profile initials, user details, and logout.</li>
+            </ul>
           </div>
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   );
 };
 
 export default Dashboard;
+

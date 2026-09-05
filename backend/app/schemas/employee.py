@@ -43,5 +43,6 @@ class EmployeeResponse(EmployeeBase):
     contracts_count: int = 0
     attendance_count: int = 0
     time_off_count: int = 0
+    department_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

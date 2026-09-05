@@ -1,13 +1,15 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthCard from './components/AuthCard';
-import Dashboard from './components/Dashboard';
+import EmployeesPage from './components/EmployeesPage';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<AuthCard />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<EmployeesPage />} />
+        <Route path="/employees" element={<EmployeesPage />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );

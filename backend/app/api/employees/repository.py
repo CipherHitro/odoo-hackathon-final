@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import List
@@ -10,8 +10,18 @@ class EmployeeRepository:
 
     @staticmethod
     async def get_all(db: AsyncSession) -> List[Employee]:
+        wireframe_order = case(
+            (Employee.work_email == 'aarav@exp.com', 1),
+            (Employee.work_email == 'sara@exp.com', 2),
+            (Employee.work_email == 'john@exp.com', 3),
+            (Employee.work_email == 'neha@exp.com', 4),
+            else_=10
+        )
         result = await db.execute(
-            select(Employee).options(selectinload(Employee.contracts))
+            select(Employee).options(
+                selectinload(Employee.contracts),
+                selectinload(Employee.department),
+            ).order_by(wireframe_order.asc(), Employee.id.asc())
         )
         return list(result.scalars().all())
 
@@ -20,7 +30,10 @@ class EmployeeRepository:
         result = await db.execute(
             select(Employee)
             .where(Employee.id == employee_id)
-            .options(selectinload(Employee.contracts))
+            .options(
+                selectinload(Employee.contracts),
+                selectinload(Employee.department),
+            )
         )
         return result.scalar_one_or_none()
 
@@ -29,7 +42,10 @@ class EmployeeRepository:
         result = await db.execute(
             select(Employee)
             .where(Employee.user_id == user_id)
-            .options(selectinload(Employee.contracts))
+            .options(
+                selectinload(Employee.contracts),
+                selectinload(Employee.department),
+            )
         )
         return result.scalar_one_or_none()
 

@@ -20,11 +20,7 @@ async def get_employees(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List employees. Regular employees only see their own profile, while HR/Admin can view all."""
-    if current_user.role == UserRole.EMPLOYEE.value:
-        emp = await EmployeeService.get_by_user_id(db, current_user.id)
-        return [EmployeeController._to_response(emp)] if emp else []
-
+    """List employees directory (all authenticated users)."""
     return await EmployeeController.get_all(db)
 
 
