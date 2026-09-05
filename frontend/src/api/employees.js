@@ -131,6 +131,17 @@ export const updateWorkingSchedule = async (id, data) => {
   return await res.json();
 };
 
+export const deleteWorkingSchedule = async (id) => {
+  const res = await fetch(`/working-schedules/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to delete working schedule');
+  }
+  return true;
+};
+
 export const getEmployeeContracts = async (employeeId) => {
   const res = await fetch(`/employees/${employeeId}/contracts`, {
     headers: { 'Content-Type': 'application/json' },
@@ -140,4 +151,3 @@ export const getEmployeeContracts = async (employeeId) => {
   }
   return await res.json();
 };
-

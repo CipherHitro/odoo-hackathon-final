@@ -515,9 +515,21 @@ async def seed_data():
                 validity_label="2026 Medical Balance",
                 description="Annual Sick Leave allocation",
             )
-            db.add_all([alloc_pto, alloc_sick])
+            # 12 days Casual Leave
+            alloc_casual = TimeOffAllocation(
+                employee_id=emp.id,
+                time_off_type_id=casual.id,
+                allocated_days=12.0,
+                taken_days=0.0,
+                approver_id=sara.id,
+                status="approved",
+                validity_label="2026 Casual Leave Balance",
+                description="Annual Casual Leave allocation approved by HR",
+            )
+            db.add_all([alloc_pto, alloc_sick, alloc_casual])
             allocations[(emp.id, pto.id)] = alloc_pto
             allocations[(emp.id, sick.id)] = alloc_sick
+            allocations[(emp.id, casual.id)] = alloc_casual
         await db.flush()
 
         # Sample Leave Requests

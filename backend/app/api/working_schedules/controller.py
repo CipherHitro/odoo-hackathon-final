@@ -36,3 +36,13 @@ class WorkingScheduleController:
                 detail="Working Schedule not found",
             )
         return WorkingScheduleResponse.model_validate(sch)
+
+    @staticmethod
+    async def delete(db: AsyncSession, schedule_id: int) -> None:
+        success = await WorkingScheduleService.delete(db, schedule_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Working Schedule not found",
+            )
+
