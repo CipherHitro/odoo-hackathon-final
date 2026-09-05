@@ -92,9 +92,9 @@ export const canManageTimeOff = (user) => {
 
 // Payroll / Payruns access
 // Per permission.txt:
-// - Employee: NO access
+// - Employee: NO access (or view own payslips)
 // - HR Manager: NO access
-// - HR Payroll User: Manage
+// - HR Payroll User: Manage Payruns & Payslips (Create, Compute, Validate, Mark Paid, Edit; NO Delete), Read-only Structures & Rules
 // - HR Payroll Admin: Full CRUD
 // - Admin: Full CRUD
 export const canManagePayroll = (user) => {
@@ -107,6 +107,57 @@ export const canManagePayroll = (user) => {
 
 export const canAccessPayroll = (user) => {
   return canManagePayroll(user);
+};
+
+// Payroll Module Access per permission.txt:
+// - Admin & HR Payroll Admin: Full CRUD on Payruns, Payslips, Structures, Rules
+// - HR Payroll User: Manage Payruns (NO Delete), Manage Payslips, Read-only Structures & Rules
+// - Employee: View own payslips only (no payruns, structures, rules)
+// - HR Manager: NO access to Payroll
+export const canAccessPayrollModule = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN,
+    UserRole.HR_PAYROLL_USER,
+    UserRole.EMPLOYEE
+  ].includes(user?.role);
+};
+
+export const canViewPayrollAdminTabs = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN,
+    UserRole.HR_PAYROLL_USER
+  ].includes(user?.role);
+};
+
+export const canManagePayruns = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN,
+    UserRole.HR_PAYROLL_USER
+  ].includes(user?.role);
+};
+
+export const canDeletePayrun = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN
+  ].includes(user?.role);
+};
+
+export const canManageStructures = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN
+  ].includes(user?.role);
+};
+
+export const canManageRules = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN
+  ].includes(user?.role);
 };
 
 // Salary Structures & Salary Rules
