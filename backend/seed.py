@@ -95,6 +95,11 @@ async def seed_data():
             {"email": "neha@oxp.com", "name": "Neha Patel", "role": UserRole.EMPLOYEE.value},
             {"email": "priya@oxp.com", "name": "Priya Sharma", "role": UserRole.EMPLOYEE.value},
             {"email": "vikram@oxp.com", "name": "Vikram Malhotra", "role": UserRole.EMPLOYEE.value},
+            {"email": "ananya@oxp.com", "name": "Ananya Sen", "role": UserRole.EMPLOYEE.value},
+            {"email": "rohan@oxp.com", "name": "Rohan Iyer", "role": UserRole.EMPLOYEE.value},
+            {"email": "devraj@oxp.com", "name": "Devraj Mukherjee", "role": UserRole.EMPLOYEE.value},
+            {"email": "kavita@oxp.com", "name": "Kavita Rao", "role": UserRole.EMPLOYEE.value},
+            {"email": "tanvi@oxp.com", "name": "Tanvi Deshmukh", "role": UserRole.EMPLOYEE.value},
         ]
         users = {}
         for u in users_data:
@@ -185,7 +190,9 @@ async def seed_data():
             status=EmployeeStatus.ACTIVE.value,
             user_id=users["hr@oxp.com"].id,
             date_of_birth=date(1989, 4, 12),
-            private_address="402 Sea View Apts, Bandra West, Mumbai",
+            gender="female",
+            personal_email="sara.khan@gmail.com",
+            private_address="402 Sea View Apts, Bandra West, Mumbai, Maharashtra 400050",
         )
         db.add(sara)
         await db.flush()
@@ -207,7 +214,9 @@ async def seed_data():
             status=EmployeeStatus.ACTIVE.value,
             user_id=users["aarav@oxp.com"].id,
             date_of_birth=date(1994, 8, 22),
-            private_address="Flat 101, Palm Heights, Andheri East, Mumbai",
+            gender="male",
+            personal_email="aarav.mehta94@gmail.com",
+            private_address="Flat 101, Palm Heights, Andheri East, Mumbai, Maharashtra 400069",
         )
 
         # John Dsouza (matching design mockup)
@@ -224,7 +233,9 @@ async def seed_data():
             status=EmployeeStatus.ACTIVE.value,
             user_id=users["john@oxp.com"].id,
             date_of_birth=date(1992, 11, 5),
-            private_address="304 Lakefront Towers, Indiranagar, Bengaluru",
+            gender="male",
+            personal_email="john.dsouza.dev@gmail.com",
+            private_address="304 Lakefront Towers, Indiranagar, Bengaluru, Karnataka 560038",
         )
 
         # Neha Patel (matching design mockup)
@@ -241,7 +252,9 @@ async def seed_data():
             status=EmployeeStatus.ACTIVE.value,
             user_id=users["neha@oxp.com"].id,
             date_of_birth=date(1996, 2, 18),
-            private_address="B-12 Hill View Society, Powai, Mumbai",
+            gender="female",
+            personal_email="neha.patel.hr@gmail.com",
+            private_address="B-12 Hill View Society, Powai, Mumbai, Maharashtra 400076",
         )
 
         # Priya Sharma
@@ -258,7 +271,9 @@ async def seed_data():
             status=EmployeeStatus.ACTIVE.value,
             user_id=users["priya@oxp.com"].id,
             date_of_birth=date(1995, 6, 30),
-            private_address="21 Greater Kailash 1, New Delhi",
+            gender="female",
+            personal_email="priya.sharma95@outlook.com",
+            private_address="21 Greater Kailash 1, New Delhi, Delhi 110048",
         )
 
         # Vikram Malhotra
@@ -275,7 +290,9 @@ async def seed_data():
             status=EmployeeStatus.ACTIVE.value,
             user_id=users["vikram@oxp.com"].id,
             date_of_birth=date(1993, 9, 14),
-            private_address="12 Koramangala 4th Block, Bengaluru",
+            gender="male",
+            personal_email="vikram.ops@gmail.com",
+            private_address="12 Koramangala 4th Block, Bengaluru, Karnataka 560034",
         )
 
         # Rahul Verma
@@ -292,16 +309,137 @@ async def seed_data():
             status=EmployeeStatus.ACTIVE.value,
             user_id=users["payroll@oxp.com"].id,
             date_of_birth=date(1990, 1, 15),
-            private_address="501 Skyline Apts, Malad West, Mumbai",
+            gender="male",
+            personal_email="rahul.verma.fin@gmail.com",
+            private_address="501 Skyline Apts, Malad West, Mumbai, Maharashtra 400064",
         )
 
-        employees_list = [aarav, john, neha, priya, vikram, rahul]
-        db.add_all(employees_list)
+        # Pooja Joshi (Finance / Payroll User)
+        pooja = Employee(
+            name="Pooja Joshi",
+            job_position="Senior Payroll Specialist",
+            department_id=depts["Finance"].id,
+            manager_id=rahul.id,
+            work_email="payroll.user@oxp.com",
+            phone="+91 98765 88008",
+            work_location="Mumbai",
+            company="OXP Pvt Ltd",
+            working_schedule_id=std_schedule.id,
+            status=EmployeeStatus.ACTIVE.value,
+            user_id=users["payroll.user@oxp.com"].id,
+            date_of_birth=date(1993, 7, 19),
+            gender="female",
+            personal_email="pooja.joshi93@yahoo.com",
+            private_address="Flat 602, Sai Sagar Complex, Thane West, Maharashtra 400602",
+        )
+
+        # Ananya Sen (Marketing Director - Sales & Marketing)
+        ananya = Employee(
+            name="Ananya Sen",
+            job_position="Marketing Director",
+            department_id=depts["Sales & Marketing"].id,
+            manager_id=sara.id,
+            work_email="ananya@oxp.com",
+            phone="+91 98765 99009",
+            work_location="Bengaluru",
+            company="OXP Pvt Ltd",
+            working_schedule_id=std_schedule.id,
+            status=EmployeeStatus.ACTIVE.value,
+            user_id=users["ananya@oxp.com"].id,
+            date_of_birth=date(1991, 3, 25),
+            gender="female",
+            personal_email="ananya.sen.mkt@gmail.com",
+            private_address="Penthouse 14B, Green Glen Layout, Bellandur, Bengaluru, Karnataka 560103",
+        )
+
+        # Devraj Mukherjee (Head of Operations - Operations)
+        devraj = Employee(
+            name="Devraj Mukherjee",
+            job_position="Head of Operations",
+            department_id=depts["Operations"].id,
+            manager_id=sara.id,
+            work_email="devraj@oxp.com",
+            phone="+91 98765 34034",
+            work_location="Mumbai",
+            company="OXP Pvt Ltd",
+            working_schedule_id=std_schedule.id,
+            status=EmployeeStatus.ACTIVE.value,
+            user_id=users["devraj@oxp.com"].id,
+            date_of_birth=date(1988, 10, 14),
+            gender="male",
+            personal_email="devraj.mukherjee@outlook.com",
+            private_address="Villa 8, Clover Highlands, NIBM Road, Pune, Maharashtra 411048",
+        )
+
+        # Tanvi Deshmukh (Frontend UI/UX Engineer - Engineering)
+        tanvi = Employee(
+            name="Tanvi Deshmukh",
+            job_position="Frontend UI/UX Engineer",
+            department_id=depts["Engineering"].id,
+            manager_id=john.id,
+            work_email="tanvi@oxp.com",
+            phone="+91 98765 78078",
+            work_location="Bengaluru",
+            company="OXP Pvt Ltd",
+            working_schedule_id=std_schedule.id,
+            status=EmployeeStatus.ACTIVE.value,
+            user_id=users["tanvi@oxp.com"].id,
+            date_of_birth=date(1998, 9, 21),
+            gender="female",
+            personal_email="tanvi.deshmukh.design@gmail.com",
+            private_address="Tower 2, Apt 501, Prestige Shantiniketan, Whitefield, Bengaluru, Karnataka 560048",
+        )
+
+        mid_batch = [aarav, john, neha, priya, vikram, rahul, pooja, ananya, devraj, tanvi]
+        db.add_all(mid_batch)
+        await db.flush()
+
+        # Rohan Iyer (Reports to Ananya in Sales & Marketing)
+        rohan = Employee(
+            name="Rohan Iyer",
+            job_position="Enterprise Account Executive",
+            department_id=depts["Sales & Marketing"].id,
+            manager_id=ananya.id,
+            work_email="rohan@oxp.com",
+            phone="+91 98765 12012",
+            work_location="Mumbai",
+            company="OXP Pvt Ltd",
+            working_schedule_id=std_schedule.id,
+            status=EmployeeStatus.ACTIVE.value,
+            user_id=users["rohan@oxp.com"].id,
+            date_of_birth=date(1995, 12, 8),
+            gender="male",
+            personal_email="rohan.iyer.sales@gmail.com",
+            private_address="A-303, Silver Beach Residency, Juhu, Mumbai, Maharashtra 400049",
+        )
+
+        # Kavita Rao (Reports to Devraj in Operations)
+        kavita = Employee(
+            name="Kavita Rao",
+            job_position="Logistics & Facilities Coordinator",
+            department_id=depts["Operations"].id,
+            manager_id=devraj.id,
+            work_email="kavita@oxp.com",
+            phone="+91 98765 56056",
+            work_location="Mumbai",
+            company="OXP Pvt Ltd",
+            working_schedule_id=std_schedule.id,
+            status=EmployeeStatus.ACTIVE.value,
+            user_id=users["kavita@oxp.com"].id,
+            date_of_birth=date(1997, 5, 17),
+            gender="female",
+            personal_email="kavita.rao97@gmail.com",
+            private_address="Flat 204, Orchid Enclave, Vashi, Navi Mumbai, Maharashtra 400703",
+        )
+
+        db.add_all([rohan, kavita])
         await db.flush()
 
         # Update department managers
         depts["Engineering"].manager_id = john.id
         depts["Finance"].manager_id = aarav.id
+        depts["Sales & Marketing"].manager_id = ananya.id
+        depts["Operations"].manager_id = devraj.id
 
         # ---------------------------------------------------------------------
         # 5. Salary Structures & Rules
@@ -438,6 +576,84 @@ async def seed_data():
                 "status": ContractStatus.RUNNING.value,
                 "notes": "Payroll operations manager contract",
             },
+            {
+                "reference": "CON/2026/0008",
+                "employee_id": pooja.id,
+                "department_id": depts["Finance"].id,
+                "job_position": "Senior Payroll Specialist",
+                "start_date": date(2025, 2, 1),
+                "end_date": None,
+                "wage_monthly": Decimal("75000.00"),
+                "working_schedule_id": std_schedule.id,
+                "salary_structure_id": std_salary_struct.id,
+                "status": ContractStatus.RUNNING.value,
+                "notes": "Finance payroll specialist contract",
+            },
+            {
+                "reference": "CON/2026/0009",
+                "employee_id": ananya.id,
+                "department_id": depts["Sales & Marketing"].id,
+                "job_position": "Marketing Director",
+                "start_date": date(2024, 7, 1),
+                "end_date": None,
+                "wage_monthly": Decimal("140000.00"),
+                "working_schedule_id": std_schedule.id,
+                "salary_structure_id": exec_salary_struct.id,
+                "status": ContractStatus.RUNNING.value,
+                "notes": "Marketing leadership employment contract",
+            },
+            {
+                "reference": "CON/2026/0010",
+                "employee_id": rohan.id,
+                "department_id": depts["Sales & Marketing"].id,
+                "job_position": "Enterprise Account Executive",
+                "start_date": date(2025, 3, 15),
+                "end_date": None,
+                "wage_monthly": Decimal("80000.00"),
+                "working_schedule_id": std_schedule.id,
+                "salary_structure_id": std_salary_struct.id,
+                "status": ContractStatus.RUNNING.value,
+                "notes": "Sales enterprise account executive contract",
+            },
+            {
+                "reference": "CON/2026/0011",
+                "employee_id": devraj.id,
+                "department_id": depts["Operations"].id,
+                "job_position": "Head of Operations",
+                "start_date": date(2024, 5, 1),
+                "end_date": None,
+                "wage_monthly": Decimal("130000.00"),
+                "working_schedule_id": std_schedule.id,
+                "salary_structure_id": exec_salary_struct.id,
+                "status": ContractStatus.RUNNING.value,
+                "notes": "Operations executive management contract",
+            },
+            {
+                "reference": "CON/2026/0012",
+                "employee_id": kavita.id,
+                "department_id": depts["Operations"].id,
+                "job_position": "Logistics & Facilities Coordinator",
+                "start_date": date(2025, 5, 1),
+                "end_date": None,
+                "wage_monthly": Decimal("60000.00"),
+                "working_schedule_id": std_schedule.id,
+                "salary_structure_id": std_salary_struct.id,
+                "status": ContractStatus.RUNNING.value,
+                "notes": "Operations logistics specialist contract",
+            },
+            {
+                "reference": "CON/2026/0013",
+                "employee_id": tanvi.id,
+                "department_id": depts["Engineering"].id,
+                "job_position": "Frontend UI/UX Engineer",
+                "start_date": date(2025, 6, 1),
+                "end_date": None,
+                "wage_monthly": Decimal("85000.00"),
+                "working_schedule_id": std_schedule.id,
+                "salary_structure_id": std_salary_struct.id,
+                "status": ContractStatus.RUNNING.value,
+                "notes": "Product engineering frontend contract",
+            },
         ]
         created_contracts = {}
         for c in contracts_data:
@@ -490,7 +706,7 @@ async def seed_data():
         await db.flush()
 
         # Allocations for each employee
-        all_emps = [sara, aarav, john, neha, priya, vikram, rahul]
+        all_emps = [sara, aarav, john, neha, priya, vikram, rahul, pooja, ananya, rohan, devraj, kavita, tanvi]
         allocations = {}
         for emp in all_emps:
             # 20 days PTO
@@ -586,13 +802,41 @@ async def seed_data():
             status="to_approve",
             reason="Personal work in home town",
         )
-        db.add_all([req1, req2, req3, req4])
+
+        # Ananya Sen took 2 days PTO
+        req5 = TimeOffRequest(
+            employee_id=ananya.id,
+            time_off_type_id=pto.id,
+            allocation_id=allocations[(ananya.id, pto.id)].id,
+            start_date=date(2026, 8, 17),
+            end_date=date(2026, 8, 18),
+            duration_days=2.0,
+            approver_id=sara.id,
+            status="approved",
+            reason="Brand launch rest days",
+        )
+        allocations[(ananya.id, pto.id)].taken_days = 2.0
+
+        # Kavita Rao has a pending Casual Leave request
+        req6 = TimeOffRequest(
+            employee_id=kavita.id,
+            time_off_type_id=casual.id,
+            allocation_id=allocations[(kavita.id, casual.id)].id,
+            start_date=date(2026, 9, 25),
+            end_date=date(2026, 9, 25),
+            duration_days=1.0,
+            approver_id=devraj.id,
+            status="to_approve",
+            reason="Apartment relocation",
+        )
+
+        db.add_all([req1, req2, req3, req4, req5, req6])
         await db.flush()
 
         # ---------------------------------------------------------------------
-        # 8. Attendance Records (Past days + Live active session today for Aarav)
+        # 8. Attendance Records (Past days + Live active session today for Aarav and Tanvi)
         # ---------------------------------------------------------------------
-        print("🕒 8/9 Creating Attendance Records (Past days + Live session for Aarav Mehta)...")
+        print("🕒 8/9 Creating Attendance Records (Past days + Live sessions)...")
         now = datetime.now(timezone.utc)
         today = now.date()
 
@@ -619,7 +863,6 @@ async def seed_data():
 
         # TODAY'S ATTENDANCE:
         # Aarav Mehta is currently CHECKED IN (check_out is None)
-        # This makes the top Navbar attendance widget show active status immediately!
         today_check_in = datetime(today.year, today.month, today.day, 9, 15, 0, tzinfo=timezone.utc)
         db.add(
             AttendanceRecord(
@@ -632,6 +875,19 @@ async def seed_data():
             )
         )
 
+        # Tanvi Deshmukh is currently CHECKED IN (check_out is None)
+        today_check_in_tanvi = datetime(today.year, today.month, today.day, 9, 30, 0, tzinfo=timezone.utc)
+        db.add(
+            AttendanceRecord(
+                employee_id=tanvi.id,
+                check_in=today_check_in_tanvi,
+                check_out=None,
+                worked_hours=0.0,
+                overtime_hours=0.0,
+                notes="Active session from frontend workstation",
+            )
+        )
+
         # John Dsouza checked in and out today
         db.add(
             AttendanceRecord(
@@ -641,6 +897,18 @@ async def seed_data():
                 worked_hours=8.08,
                 overtime_hours=0.08,
                 notes="Completed today shift",
+            )
+        )
+
+        # Pooja Joshi checked in and out today
+        db.add(
+            AttendanceRecord(
+                employee_id=pooja.id,
+                check_in=datetime(today.year, today.month, today.day, 9, 5, 0, tzinfo=timezone.utc),
+                check_out=datetime(today.year, today.month, today.day, 17, 45, 0, tzinfo=timezone.utc),
+                worked_hours=8.67,
+                overtime_hours=0.67,
+                notes="Completed shift and payroll reconciliation",
             )
         )
         await db.flush()
@@ -659,13 +927,18 @@ async def seed_data():
         db.add(payrun)
         await db.flush()
 
-        # Create detailed payslips for Aarav, John, Neha, Priya, Sara
-        for emp in [sara, aarav, john, neha, priya]:
+        # Create detailed payslips for Sara, Aarav, John, Neha, Priya, Pooja, Ananya, Devraj
+        for emp in [sara, aarav, john, neha, priya, pooja, ananya, devraj]:
             contract = created_contracts.get(emp.id)
             basic = contract.wage_monthly if contract else Decimal("50000.00")
-            hra = (basic * Decimal("0.40")).quantize(Decimal("0.01"))
-            special = Decimal("15000.00")
-            gross = basic + hra + special
+            is_exec = contract.salary_structure_id == exec_salary_struct.id if contract else False
+            struct_id = exec_salary_struct.id if is_exec else std_salary_struct.id
+            hra_pct = Decimal("0.50") if is_exec else Decimal("0.40")
+            hra = (basic * hra_pct).quantize(Decimal("0.01"))
+            allowance_name = "Executive Allowance" if is_exec else "Special Allowance"
+            allowance_code = "EXEC" if is_exec else "SPECIAL"
+            allowance_amt = Decimal("30000.00") if is_exec else Decimal("15000.00")
+            gross = basic + hra + allowance_amt
             pf = (basic * Decimal("0.12")).quantize(Decimal("0.01"))
             pt = Decimal("200.00")
             net = gross - pf - pt
@@ -673,7 +946,7 @@ async def seed_data():
             payslip = Payslip(
                 payrun_id=payrun.id,
                 employee_id=emp.id,
-                salary_structure_id=std_salary_struct.id,
+                salary_structure_id=struct_id,
                 contract_id=contract.id if contract else None,
                 date_from=date(2026, 8, 1),
                 date_to=date(2026, 8, 31),
@@ -690,7 +963,7 @@ async def seed_data():
             lines = [
                 PayslipLine(payslip_id=payslip.id, rule_name="Basic Salary", code="BASIC", category="BASIC", amount=basic, sequence=10),
                 PayslipLine(payslip_id=payslip.id, rule_name="House Rent Allowance", code="HRA", category="ALLOWANCE", amount=hra, sequence=20),
-                PayslipLine(payslip_id=payslip.id, rule_name="Special Allowance", code="SPECIAL", category="ALLOWANCE", amount=special, sequence=30),
+                PayslipLine(payslip_id=payslip.id, rule_name=allowance_name, code=allowance_code, category="ALLOWANCE", amount=allowance_amt, sequence=30),
                 PayslipLine(payslip_id=payslip.id, rule_name="Gross Wage", code="GROSS", category="GROSS", amount=gross, sequence=40),
                 PayslipLine(payslip_id=payslip.id, rule_name="Provident Fund", code="PF", category="DEDUCTION", amount=pf, sequence=50),
                 PayslipLine(payslip_id=payslip.id, rule_name="Professional Tax", code="PT", category="DEDUCTION", amount=pt, sequence=60),
@@ -706,14 +979,19 @@ async def seed_data():
         print("\n🔑 Ready-to-Use Login Credentials (All passwords: 'Password123!'):")
         print("------------------------------------------------------------")
         print(" • Admin:            admin@oxp.com")
-        print(" • HR Manager:       hr@oxp.com           (Sara Khan)")
-        print(" • Payroll Admin:    payroll@oxp.com      (Rahul Verma)")
-        print(" • Payroll User:     payroll.user@oxp.com (Pooja Joshi)")
-        print(" • Employee (Hero):  aarav@oxp.com        (Aarav Mehta - Finance)")
-        print(" • Employee:         john@oxp.com         (John Dsouza - Eng)")
+        print(" • HR Manager:       hr@oxp.com           (Sara Khan - HR Lead)")
+        print(" • Payroll Admin:    payroll@oxp.com      (Rahul Verma - Finance)")
+        print(" • Payroll User:     payroll.user@oxp.com (Pooja Joshi - Finance)")
+        print(" • Employee (Hero):  aarav@oxp.com        (Aarav Mehta - Finance Lead)")
+        print(" • Employee:         john@oxp.com         (John Dsouza - Eng Lead)")
         print(" • Employee:         neha@oxp.com         (Neha Patel - HR)")
         print(" • Employee:         priya@oxp.com        (Priya Sharma - Finance)")
-        print(" • Employee:         vikram@oxp.com       (Vikram Malhotra - Eng)")
+        print(" • Employee:         vikram@oxp.com       (Vikram Malhotra - DevOps)")
+        print(" • Employee:         ananya@oxp.com       (Ananya Sen - Sales & Mktg Lead)")
+        print(" • Employee:         rohan@oxp.com        (Rohan Iyer - Sales)")
+        print(" • Employee:         devraj@oxp.com       (Devraj Mukherjee - Ops Lead)")
+        print(" • Employee:         kavita@oxp.com       (Kavita Rao - Ops)")
+        print(" • Employee:         tanvi@oxp.com        (Tanvi Deshmukh - UI/UX)")
         print("------------------------------------------------------------\n")
 
 if __name__ == "__main__":

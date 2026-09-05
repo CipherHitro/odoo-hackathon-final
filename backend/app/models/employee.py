@@ -29,6 +29,8 @@ class Employee(Base):
     # Private info
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     private_address: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    personal_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(20), nullable=True, default="not_specified")
 
     department: Mapped["Department"] = relationship("Department", back_populates="employees", foreign_keys=[department_id])
     manager: Mapped["Employee | None"] = relationship("Employee", remote_side=[id], foreign_keys=[manager_id])

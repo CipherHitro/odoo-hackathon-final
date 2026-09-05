@@ -47,17 +47,83 @@ class EmployeeRepository:
 
     @staticmethod
     async def create(db: AsyncSession, data: EmployeeCreate) -> Employee:
+        from app.models.user import User, UserRole
+        from app.core.security import hash_password
+        from app.models.time_off import TimeOffType, TimeOffAllocation
+
         db_employee = Employee(**data.model_dump())
+
+        # If work_email is provided, ensure a User login exists and is linked
+        if db_employee.work_email:
+            user_result = await db.execute(select(User).where(User.email == db_employee.work_email))
+            existing_user = user_result.scalar_one_or_none()
+            if existing_user:
+                db_employee.user_id = existing_user.id
+            elif not db_employee.user_id:
+                new_user = User(
+                    name=db_employee.name,
+                    email=db_employee.work_email,
+                    password_hash=hash_password("Password123!"),
+                    role=UserRole.EMPLOYEE.value,
+                    is_active=True,
+                )
+                db.add(new_user)
+                await db.flush()
+                db_employee.user_id = new_user.id
+
         db.add(db_employee)
+        await db.flush()
+
+        # Auto-provision standard time-off allocations (PTO, Sick, Casual) if types exist
+        try:
+            types_result = await db.execute(select(TimeOffType).where(TimeOffType.is_active == True))
+            types = types_result.scalars().all()
+            for t in types:
+                days = 20.0 if "pto" in t.name.lower() or "paid" in t.name.lower() else (10.0 if "sick" in t.name.lower() else 12.0)
+                alloc = TimeOffAllocation(
+                    employee_id=db_employee.id,
+                    time_off_type_id=t.id,
+                    allocated_days=days,
+                    taken_days=0.0,
+                    status="approved",
+                    validity_label="2026 Annual Leave Balance",
+                    description="Standard new hire leave allocation",
+                )
+                db.add(alloc)
+            await db.flush()
+        except Exception:
+            pass
+
         await db.commit()
         await db.refresh(db_employee)
         return db_employee
 
     @staticmethod
     async def update(db: AsyncSession, db_employee: Employee, data: EmployeeUpdate) -> Employee:
+        from app.models.user import User, UserRole
+        from app.core.security import hash_password
+
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_employee, key, value)
+
+        # If employee has work_email but no user_id, link or create user
+        if not db_employee.user_id and db_employee.work_email:
+            user_result = await db.execute(select(User).where(User.email == db_employee.work_email))
+            existing_user = user_result.scalar_one_or_none()
+            if existing_user:
+                db_employee.user_id = existing_user.id
+            else:
+                new_user = User(
+                    name=db_employee.name,
+                    email=db_employee.work_email,
+                    password_hash=hash_password("Password123!"),
+                    role=UserRole.EMPLOYEE.value,
+                    is_active=True,
+                )
+                db.add(new_user)
+                await db.flush()
+                db_employee.user_id = new_user.id
             
         await db.commit()
         await db.refresh(db_employee)

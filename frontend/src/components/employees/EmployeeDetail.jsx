@@ -52,9 +52,31 @@ const EmployeeDetail = ({
     personal_email: employee?.personal_email || '',
     identification_id: employee?.identification_id || '',
     gender: employee?.gender || 'not_specified',
-    birthday: employee?.birthday || '',
-    address: employee?.address || '',
+    birthday: employee?.date_of_birth || employee?.birthday || '',
+    address: employee?.private_address || employee?.address || '',
   });
+
+  useEffect(() => {
+    if (employee && employee.id) {
+      setFormData({
+        name: employee.name || '',
+        work_email: employee.work_email || '',
+        job_position: employee.job_position || '',
+        department_id: employee.department_id || (departments[0]?.id || ''),
+        working_schedule_id: employee.working_schedule_id || (schedules[0]?.id || ''),
+        manager_id: employee.manager_id || '',
+        status: employee.status || 'active',
+        phone: employee.phone || '',
+        work_location: employee.work_location || '',
+        company: employee.company || 'My Company',
+        personal_email: employee.personal_email || '',
+        identification_id: employee.identification_id || '',
+        gender: employee.gender || 'not_specified',
+        birthday: employee.date_of_birth || employee.birthday || '',
+        address: employee.private_address || employee.address || '',
+      });
+    }
+  }, [employee]);
 
   useEffect(() => {
     if (employee?.id) {
@@ -103,6 +125,11 @@ const EmployeeDetail = ({
         phone: formData.phone.trim() || null,
         work_location: formData.work_location.trim() || null,
         company: formData.company.trim() || 'My Company',
+        // Private Information
+        personal_email: formData.personal_email?.trim() || null,
+        private_address: formData.address?.trim() || null,
+        gender: formData.gender || 'not_specified',
+        date_of_birth: formData.birthday || null,
       };
 
       let result;
