@@ -39,7 +39,7 @@ const AttendancePage = () => {
   const [records, setRecords] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterToday, setFilterToday] = useState(false);
+
   const [selectedEmployeeFilter, setSelectedEmployeeFilter] = useState('');
 
   // Admin Manual Entry Modal
@@ -196,17 +196,7 @@ const AttendancePage = () => {
     });
   };
 
-  // Filter records
-  const isTodayDate = (isoString) => {
-    if (!isoString) return false;
-    const d = new Date(isoString);
-    const today = new Date();
-    return (
-      d.getDate() === today.getDate() &&
-      d.getMonth() === today.getMonth() &&
-      d.getFullYear() === today.getFullYear()
-    );
-  };
+
 
   const filteredRecords = records.filter((r) => {
     const q = searchQuery.toLowerCase().trim();
@@ -215,10 +205,9 @@ const AttendancePage = () => {
     const notesMatch = r.notes && r.notes.toLowerCase().includes(q);
     const matchesSearch = !q || nameMatch || idMatch || notesMatch;
 
-    const matchesToday = !filterToday || isTodayDate(r.check_in);
     const matchesEmp = !selectedEmployeeFilter || String(r.employee_id) === String(selectedEmployeeFilter);
 
-    return matchesSearch && matchesToday && matchesEmp;
+    return matchesSearch && matchesEmp;
   });
 
   return (
@@ -328,21 +317,7 @@ const AttendancePage = () => {
         </div>
 
         {/* Notes / Provenance panel per 03-attendance.md §Notes panel */}
-        <div style={{
-          background: 'var(--muted)',
-          borderRadius: 'var(--r-md)',
-          padding: '0.85rem 1.25rem',
-          border: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          marginBottom: '1.5rem',
-          fontSize: '0.8125rem',
-          color: 'var(--text-secondary)'
-        }}>
-          <Info size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-          <span>System-generated from check-in/out or manually corrected by an authorized user.</span>
-        </div>
+
 
         {/* List Toolbar per 03-attendance.md §Screen: Attendance — List */}
         <div style={{
@@ -375,16 +350,9 @@ const AttendancePage = () => {
             )}
           </div>
 
-          {/* Filter Pills per 03-attendance.md: "Today" and "Employee: {name}" */}
+          {/* Filter Pills per 03-attendance.md: "Employee: {name}" */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className={`filter-pill ${filterToday ? 'is-active' : ''}`}
-              onClick={() => setFilterToday(prev => !prev)}
-            >
-              <span>Today</span>
-              {filterToday && <span style={{ fontSize: '10px' }}>&bull;</span>}
-            </button>
+
 
             {employees.length > 0 && (
               <select
@@ -402,12 +370,12 @@ const AttendancePage = () => {
               </select>
             )}
 
-            {(filterToday || selectedEmployeeFilter || searchQuery) && (
+            {(selectedEmployeeFilter || searchQuery) && (
               <button
                 type="button"
                 className="filter-pill"
                 onClick={() => {
-                  setFilterToday(false);
+// setFilterToday removed as it was undefined
                   setSelectedEmployeeFilter('');
                   setSearchQuery('');
                 }}
