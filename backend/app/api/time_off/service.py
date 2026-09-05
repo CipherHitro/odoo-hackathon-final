@@ -192,11 +192,7 @@ class TimeOffService:
         type_id: int | None = None,
         status: str | None = None,
     ) -> TimeOffAllocationListResponse:
-        is_hr_or_admin = user.role in (
-            UserRole.ADMIN.value,
-            UserRole.HR_MANAGER.value,
-            UserRole.HR_PAYROLL_ADMIN.value,
-        )
+        is_hr_or_admin = user.role != UserRole.EMPLOYEE.value
 
         effective_emp_id = employee_id
         if not is_hr_or_admin:
@@ -259,11 +255,7 @@ class TimeOffService:
 
         duration_days = float((data.end_date - data.start_date).days + 1)
 
-        is_hr_or_admin = user.role in (
-            UserRole.ADMIN.value,
-            UserRole.HR_MANAGER.value,
-            UserRole.HR_PAYROLL_ADMIN.value,
-        )
+        is_hr_or_admin = user.role != UserRole.EMPLOYEE.value
 
         # Resolve employee
         if not is_hr_or_admin or data.employee_id is None:
@@ -385,11 +377,7 @@ class TimeOffService:
         status: str | None = None,
         my_team: bool = False,
     ) -> TimeOffRequestListResponse:
-        is_hr_or_admin = user.role in (
-            UserRole.ADMIN.value,
-            UserRole.HR_MANAGER.value,
-            UserRole.HR_PAYROLL_ADMIN.value,
-        )
+        is_hr_or_admin = user.role != UserRole.EMPLOYEE.value
 
         effective_emp_id = employee_id
         manager_id: int | None = None
