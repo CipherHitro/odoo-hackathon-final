@@ -413,7 +413,7 @@ const EmployeesPage = () => {
                       width: '42px',
                       height: '42px',
                       borderRadius: '10px',
-                      backgroundColor: 'rgba(241, 80, 42, 0.1)',
+                      backgroundColor: 'var(--coral-bg)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -706,7 +706,7 @@ const EmployeesPage = () => {
                         id="btn-new-employee"
                       >
                         <Plus size={15} style={{ marginRight: '6px' }} />
-                        + New Employee
+                        New Employee
                       </button>
                     </div>
                   )}

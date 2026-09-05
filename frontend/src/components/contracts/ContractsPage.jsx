@@ -172,7 +172,7 @@ const ContractsPage = () => {
                     id="btn-new-contract"
                   >
                     <Plus size={15} style={{ marginRight: '6px' }} />
-                    + New Contract
+                    New Contract
                   </button>
                 </div>
               )}

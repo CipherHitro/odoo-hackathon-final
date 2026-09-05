@@ -15,11 +15,11 @@ import { getCurrentUser } from '../../api/auth';
 import { canManageEmployees, getDepartmentColor } from '../../utils/rbac';
 
 const TOKEN_PALETTE = [
-  { id: 'var(--coral)', label: 'Coral (HR)', bg: '#F1502A' },
-  { id: 'var(--sky)', label: 'Sky (Finance)', bg: '#3B82F6' },
-  { id: 'var(--ink)', label: 'Ink (Engineering)', bg: '#171B26' },
-  { id: 'var(--warning)', label: 'Warning (Sales)', bg: '#D97706' },
-  { id: 'var(--success)', label: 'Success (Support)', bg: '#16A34A' },
+  { id: 'var(--coral)', label: 'Coral (HR)', bg: '#D9381E' },
+  { id: 'var(--sky)', label: 'Blue (Finance)', bg: '#2563EB' },
+  { id: 'var(--ink)', label: 'Ink (Engineering)', bg: '#111827' },
+  { id: 'var(--warning)', label: 'Warning (Sales)', bg: '#C96C00' },
+  { id: 'var(--success)', label: 'Success (Support)', bg: '#0E8A42' },
 ];
 
 const DepartmentList = () => {
@@ -160,7 +160,7 @@ const DepartmentList = () => {
                 onClick={handleOpenCreate}
               >
                 <Plus size={15} style={{ marginRight: '6px' }} />
-                + New Department
+                New Department
               </button>
             </div>
           )}

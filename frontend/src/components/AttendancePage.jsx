@@ -260,7 +260,7 @@ const AttendancePage = () => {
                 id="btn-manual-attendance"
               >
                 <Plus size={16} />
-                <span>+ New</span>
+                <span>New</span>
               </button>
             )}
           </div>
@@ -391,7 +391,7 @@ const AttendancePage = () => {
                 className={`filter-pill ${selectedEmployeeFilter ? 'is-active' : ''}`}
                 value={selectedEmployeeFilter}
                 onChange={(e) => setSelectedEmployeeFilter(e.target.value)}
-                style={{ cursor: 'pointer', appearance: 'none', paddingRight: '1rem' }}
+                style={{ cursor: 'pointer' }}
               >
                 <option value="">Employee: All</option>
                 {employees.map(emp => (

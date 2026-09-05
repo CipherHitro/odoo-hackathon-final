@@ -206,7 +206,7 @@ const UserManagement = () => {
               onClick={handleOpenCreate}
             >
               <Plus size={15} style={{ marginRight: '6px' }} />
-              + New User
+              New User
             </button>
           </div>
         </div>

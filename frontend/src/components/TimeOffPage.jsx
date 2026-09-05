@@ -408,7 +408,7 @@ const TimeOffPage = () => {
               id="btn-request-time-off"
             >
               <Plus size={16} />
-              <span>+ Request Time Off</span>
+              <span>Request Time Off</span>
             </button>
 
             {isAdminOrHr && (
@@ -423,7 +423,7 @@ const TimeOffPage = () => {
                   id="btn-new-allocation"
                 >
                   <Plus size={16} />
-                  <span>+ New Allocation</span>
+                  <span>New Allocation</span>
                 </button>
 
                 <button
@@ -436,7 +436,7 @@ const TimeOffPage = () => {
                   id="btn-new-leave-type"
                 >
                   <Plus size={16} />
-                  <span>+ New Leave Type</span>
+                  <span>New Leave Type</span>
                 </button>
               </>
             )}
@@ -606,7 +606,7 @@ const TimeOffPage = () => {
                 ) : filteredRequests.length === 0 ? (
                   <tr>
                     <td colSpan={isAdminOrHr ? 7 : 6} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                      No time off requests found. Click "+ Request Time Off" to submit one.
+                      No time off requests found. Click "Request Time Off" to submit one.
                     </td>
                   </tr>
                 ) : (

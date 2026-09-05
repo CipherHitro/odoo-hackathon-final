@@ -3,45 +3,48 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Brand — used sparingly, only for primary actions and identity */
-  --coral:          #F1502A;
-  --coral-strong:   #D8431F;
-  --coral-bg:       rgba(241, 80, 42, 0.08);
+  /* Brand — refined, deeper rich crimson coral matching reference UI */
+  --coral:          #D9381E;
+  --coral-strong:   #B82810;
+  --coral-hover:    #C52E15;
+  --coral-bg:       rgba(217, 56, 30, 0.08);
+  --coral-subtle:   rgba(217, 56, 30, 0.14);
 
   /* Ink — authority text, solid pills, active states */
-  --ink:            #171B26;
-  --ink-soft:       #2E3344;
+  --ink:            #111827;
+  --ink-soft:       #1F2937;
 
   /* Secondary accent */
-  --sky:            #3B82F6;
-  --sky-bg:         rgba(59, 130, 246, 0.12);
+  --sky:            #2563EB;
+  --sky-bg:         rgba(37, 99, 235, 0.10);
 
   /* Surfaces */
-  --page:           #F1F1F3;   /* app canvas */
+  --page:           #F4F5F7;   /* app canvas */
   --card:           #FFFFFF;   /* card surface */
-  --muted:          #EFEFF2;   /* pills, search bar, icon buttons, inactive chips */
-  --border:         #E8E9EC;
+  --muted:          #ECEEF2;   /* pills, search bar, icon buttons, inactive chips */
+  --border:         #E3E5EB;
+  --border-hover:   #D0D3DC;
 
   /* Text */
-  --text-primary:   #171B26;
-  --text-secondary: #6B7280;
-  --text-muted:     #9CA3AF;
+  --text-primary:   #111827;
+  --text-secondary: #5F6775;
+  --text-muted:     #8E95A3;
   --text-inverse:   #FFFFFF;
 
-  /* Status semantics */
-  --success:        #16A34A;  /* Active, Approved, Running, Paid, Present */
-  --success-bg:     rgba(22, 163, 74, 0.12);
-  --warning:        #D97706;  /* To Approve, Pending, Draft-warning, Late */
-  --warning-bg:     rgba(217, 119, 6, 0.12);
-  --danger:         #DC2626;  /* Expired, Absent, Refused, Duplicate */
-  --danger-bg:      rgba(220, 38, 38, 0.12);
-  --neutral-pill:   #9CA3AF;  /* Draft, Not Paid, Inactive */
-  --neutral-pill-bg:rgba(156, 163, 175, 0.14);
+  /* Status semantics — polished deeper tones */
+  --success:        #0E8A42;  /* Active, Approved, Running, Paid, Present */
+  --success-bg:     rgba(14, 138, 66, 0.10);
+  --warning:        #C96C00;  /* To Approve, Pending, Draft-warning, Late */
+  --warning-bg:     rgba(201, 108, 0, 0.10);
+  --danger:         #C5221F;  /* Expired, Absent, Refused, Duplicate */
+  --danger-bg:      rgba(197, 34, 31, 0.10);
+  --neutral-pill:   #8E95A3;  /* Draft, Not Paid, Inactive */
+  --neutral-pill-bg:rgba(142, 149, 163, 0.14);
 
   /* Elevation */
-  --shadow-card:    0 1px 3px rgba(23, 27, 38, 0.05), 0 1px 2px rgba(23, 27, 38, 0.03);
-  --shadow-float:   0 20px 35px -5px rgba(23, 27, 38, 0.12), 0 10px 15px -5px rgba(23, 27, 38, 0.05);
-  --shadow-focus:   0 0 0 3px rgba(241, 80, 42, 0.20);
+  --shadow-card:    0 1px 3px rgba(17, 24, 39, 0.05), 0 1px 2px rgba(17, 24, 39, 0.03);
+  --shadow-float:   0 20px 35px -5px rgba(17, 24, 39, 0.10), 0 10px 15px -5px rgba(17, 24, 39, 0.04);
+  --shadow-focus:   0 0 0 3px rgba(217, 56, 30, 0.18);
 
   /* Geometry */
   --r-sm:           8px;    /* icon chips */
@@ -49,9 +52,9 @@
   --r-lg:           20px;   /* cards, modals */
   --r-pill:         999px;  /* badges, tags, search bar, nav pills */
 
-  /* Typography */
-  --font-display:   'Clash Display', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-ui:        'General Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Typography — exactly matching modern SaaS reference */
+  --font-display:   'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-ui:        'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono:      'JetBrains Mono', monospace;
 }
 
@@ -117,7 +120,7 @@ button {
   background-color: var(--coral);
   color: #ffffff;
   border-color: var(--coral);
-  box-shadow: 0 1px 2px rgba(241, 80, 42, 0.25);
+  box-shadow: 0 1px 2px rgba(217, 56, 30, 0.25);
 }
 
 .btn-primary:hover:not(:disabled), .btn-coral:hover:not(:disabled) {
@@ -565,9 +568,9 @@ select:disabled {
 }
 
 .navbar-brand-mark {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   background: var(--coral);
   color: #fff;
   font-family: var(--font-display);
@@ -679,19 +682,22 @@ select:disabled {
 .navbar-search-pill {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--muted);
   border-radius: var(--r-pill);
-  padding: 0.375rem 0.875rem;
+  padding: 0 1rem;
+  height: 38px;
+  min-height: 38px;
   border: 1px solid transparent;
-  transition: all 0.15s ease;
-  width: 220px;
+  transition: all 0.2s ease;
+  width: 290px;
+  box-sizing: border-box;
 }
 
 .navbar-search-pill:focus-within {
   background: var(--card);
-  border-color: var(--border);
-  box-shadow: var(--shadow-focus);
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px var(--coral-bg);
 }
 
 .navbar-search-pill .search-icon {
@@ -703,20 +709,19 @@ select:disabled {
   background: none;
   border: none;
   outline: none;
-  font-size: 0.8125rem;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
   color: var(--text-primary);
   width: 100%;
 }
 
-.navbar-search-pill .search-badge {
-  font-size: 0.6875rem;
-  font-family: var(--font-mono);
+.navbar-search-pill .search-input::placeholder {
   color: var(--text-muted);
-  background: var(--card);
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  flex-shrink: 0;
+  font-size: 0.84rem;
+}
+
+.navbar-search-pill .search-badge {
+  display: none;
 }
 
 /* Page Toolbar Search & Filter Pills per 00-foundations.md & 03-attendance.md */
@@ -726,14 +731,17 @@ select:disabled {
   gap: 8px;
   background: var(--card);
   border-radius: var(--r-pill);
-  padding: 0.45rem 1rem;
+  padding: 0 1rem;
+  height: 38px;
+  min-height: 38px;
   border: 1px solid var(--border);
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .search-pill-container:focus-within {
   border-color: var(--coral);
-  box-shadow: 0 0 0 2px rgba(241, 80, 42, 0.15);
+  box-shadow: 0 0 0 3px var(--coral-bg);
 }
 
 .search-pill-icon {
@@ -751,6 +759,10 @@ select:disabled {
   width: 100%;
 }
 
+.search-pill-input::placeholder {
+  color: var(--text-muted);
+}
+
 .search-clear-btn {
   background: none;
   border: none;
@@ -761,39 +773,69 @@ select:disabled {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  transition: color 0.15s ease;
 }
 
 .search-clear-btn:hover {
   color: var(--ink);
 }
 
+/* Toolbar search pill overrides when used inside view toolbars */
+.toolbar-cluster .navbar-search-pill,
+.employees-toolbar .navbar-search-pill {
+  background: var(--card);
+  border: 1px solid var(--border);
+  height: 38px;
+  min-height: 38px;
+  padding: 0 1rem;
+}
+
+.toolbar-cluster .navbar-search-pill:focus-within,
+.employees-toolbar .navbar-search-pill:focus-within {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 3px var(--coral-bg);
+}
+
 .filter-pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  background: var(--muted);
+  background: var(--card);
   color: var(--text-secondary);
   border: 1px solid var(--border);
   border-radius: var(--r-pill);
-  padding: 0.45rem 0.95rem;
+  padding: 0 1rem;
+  height: 38px;
+  min-height: 38px;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: var(--font-ui);
   outline: none;
+  box-sizing: border-box;
 }
 
 .filter-pill:hover {
-  border-color: #D3D5DA;
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 
 .filter-pill.is-active {
-  background: rgba(241, 80, 42, 0.08);
+  background: var(--coral-bg);
   color: var(--coral);
   border-color: var(--coral);
   font-weight: 600;
+}
+
+select.filter-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F6775' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px !important;
 }
 
 .attendance-widget-wrapper {
@@ -1476,11 +1518,11 @@ select:disabled {
 /* Active Running Contract Emphasis per 02-contracts.md §Active-contract emphasis */
 .daybook-table tbody tr.contract-running-row {
   border-left: 3px solid var(--coral);
-  background: rgba(241, 80, 42, 0.03);
+  background: rgba(217, 56, 30, 0.03);
 }
 
 .daybook-table tbody tr.contract-running-row:hover {
-  background: rgba(241, 80, 42, 0.06);
+  background: rgba(217, 56, 30, 0.06);
 }
 
 .wage-mono {
@@ -1653,13 +1695,13 @@ select:disabled {
   cursor: pointer;
   transition: all 0.15s ease;
   min-width: 170px;
-  box-shadow: 0 2px 8px rgba(241, 80, 42, 0.25);
+  box-shadow: 0 2px 8px rgba(217, 56, 30, 0.25);
 }
 
 .btn-toggle-shift:hover {
   background: var(--coral-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(241, 80, 42, 0.35);
+  box-shadow: 0 4px 12px rgba(217, 56, 30, 0.35);
 }
 
 .btn-toggle-shift:active {

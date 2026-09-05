@@ -307,17 +307,14 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
 
         {/* Right: Search Pill + Attendance Widget + User Avatar */}
         <div className="navbar-right">
-          {/* Global Search Pill per Foundations §5 */}
-          <div className="navbar-search-pill" onClick={() => {}}>
-            <Search size={14} className="search-icon" />
+          {/* Global Search Pill per reference UI */}
+          <div className="navbar-search-pill">
+            <Search size={15} className="search-icon" />
             <input 
               type="text" 
-              placeholder="Search..." 
+              placeholder="Search employees, payslips..." 
               className="search-input"
-              readOnly
-              onClick={() => {}}
             />
-            <span className="search-badge">Ctrl K</span>
           </div>
 
           {/* Quick Attendance Pill */}

@@ -447,7 +447,7 @@ const WorkingScheduleList = () => {
                     onClick={handleOpenCreate}
                   >
                     <Plus size={15} style={{ marginRight: '6px' }} />
-                    + New Schedule
+                    New Schedule
                   </button>
                 </div>
               )}
