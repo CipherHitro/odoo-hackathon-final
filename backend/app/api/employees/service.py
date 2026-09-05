@@ -16,6 +16,10 @@ class EmployeeService:
         return await EmployeeRepository.get_by_id(db, employee_id)
 
     @staticmethod
+    async def get_by_user_id(db: AsyncSession, user_id: int) -> Employee | None:
+        return await EmployeeRepository.get_by_user_id(db, user_id)
+
+    @staticmethod
     async def create(db: AsyncSession, data: EmployeeCreate) -> Employee:
         return await EmployeeRepository.create(db, data)
 

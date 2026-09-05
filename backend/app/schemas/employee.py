@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional
 from datetime import date
 from app.models.employee import EmployeeStatus
@@ -44,6 +44,4 @@ class EmployeeResponse(EmployeeBase):
     attendance_count: int = 0
     time_off_count: int = 0
 
-    class Config:
-        orm_mode = True
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

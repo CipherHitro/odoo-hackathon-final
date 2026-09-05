@@ -17,6 +17,11 @@ class EmployeeRepository:
         return await db.get(Employee, employee_id)
 
     @staticmethod
+    async def get_by_user_id(db: AsyncSession, user_id: int) -> Employee | None:
+        result = await db.execute(select(Employee).where(Employee.user_id == user_id))
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def create(db: AsyncSession, data: EmployeeCreate) -> Employee:
         db_employee = Employee(**data.model_dump())
         db.add(db_employee)

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 
 class ScheduleLineBase(BaseModel):
@@ -15,9 +15,7 @@ class ScheduleLineResponse(ScheduleLineBase):
     id: int
     schedule_id: int
 
-    class Config:
-        orm_mode = True
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class WorkingScheduleBase(BaseModel):
     name: str
@@ -42,6 +40,4 @@ class WorkingScheduleResponse(WorkingScheduleBase):
     id: int
     schedule_lines: List[ScheduleLineResponse] = []
 
-    class Config:
-        orm_mode = True
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
