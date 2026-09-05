@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
-import { getDepartmentColor, canManageEmployees } from '../../utils/rbac';
+import { getDepartmentColor, canManageEmployees, canManageContracts } from '../../utils/rbac';
 import { updateEmployee, createEmployee, getEmployeeContracts } from '../../api/employees';
 
 const EmployeeDetail = ({ 
@@ -247,16 +247,18 @@ const EmployeeDetail = ({
                 <span className="smart-btn-badge">{timeOffCount}</span>
               </button>
 
-              <button 
-                type="button" 
-                className="smart-button"
-                title="View active employment contracts"
-                onClick={() => {}}
-              >
-                <FileText size={14} className="smart-btn-icon" />
-                <span className="smart-btn-label">Contracts</span>
-                <span className="smart-btn-badge">{contractCount}</span>
-              </button>
+              {canManageContracts(currentUser) && (
+                <button 
+                  type="button" 
+                  className="smart-button"
+                  title="View active employment contracts"
+                  onClick={() => {}}
+                >
+                  <FileText size={14} className="smart-btn-icon" />
+                  <span className="smart-btn-label">Contracts</span>
+                  <span className="smart-btn-badge">{contractCount}</span>
+                </button>
+              )}
 
               <button 
                 type="button" 

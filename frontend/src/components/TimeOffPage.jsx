@@ -401,10 +401,7 @@ const TimeOffPage = () => {
             <button
               type="button"
               className="btn-coral"
-              onClick={() => {
-                setFormError(null);
-                setIsRequestModalOpen(true);
-              }}
+              onClick={() => { setFormError(null); setIsRequestModalOpen(true); }}
               id="btn-request-time-off"
             >
               <Plus size={16} />
@@ -416,10 +413,7 @@ const TimeOffPage = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => {
-                    setFormError(null);
-                    setIsAllocModalOpen(true);
-                  }}
+                  onClick={() => { setFormError(null); setIsAllocModalOpen(true); }}
                   id="btn-new-allocation"
                 >
                   <Plus size={16} />
@@ -429,10 +423,7 @@ const TimeOffPage = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => {
-                    setFormError(null);
-                    setIsTypeModalOpen(true);
-                  }}
+                  onClick={() => { setFormError(null); setIsTypeModalOpen(true); }}
                   id="btn-new-leave-type"
                 >
                   <Plus size={16} />

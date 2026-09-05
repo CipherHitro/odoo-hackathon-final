@@ -7,12 +7,13 @@ import {
   Users, 
   AlertCircle, 
   CheckCircle2,
-  Building 
+  Building,
+  ShieldAlert
 } from 'lucide-react';
 import AppLayout from '../AppLayout';
 import { getDepartments, getEmployees, createDepartment, updateDepartment } from '../../api/employees';
 import { getCurrentUser } from '../../api/auth';
-import { canManageEmployees, getDepartmentColor } from '../../utils/rbac';
+import { canManageDepartments, canViewDepartments, getDepartmentColor } from '../../utils/rbac';
 
 const TOKEN_PALETTE = [
   { id: 'var(--coral)', label: 'Coral (HR)', bg: '#D9381E' },
@@ -70,6 +71,7 @@ const DepartmentList = () => {
   };
 
   const handleOpenCreate = () => {
+    if (!canManage) return;
     setSelectedDept(null);
     setFormData({
       id: null,
@@ -82,6 +84,7 @@ const DepartmentList = () => {
   };
 
   const handleSelectDept = (dept) => {
+    if (!canManage) return;
     setSelectedDept(dept);
     setFormData({
       id: dept.id,
@@ -95,6 +98,7 @@ const DepartmentList = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!canManage) return;
     setSubmitting(true);
     try {
       const payload = {
@@ -120,7 +124,8 @@ const DepartmentList = () => {
     }
   };
 
-  const canEdit = canManageEmployees(currentUser);
+  const canView = canViewDepartments(currentUser);
+  const canManage = canManageDepartments(currentUser);
 
   // Compute headcounts per department
   const headcountMap = {};
@@ -146,25 +151,45 @@ const DepartmentList = () => {
           </div>
         )}
 
-        <div className="page-header-row">
-          <div className="page-header-left">
-            <h1 className="page-title font-display">Departments</h1>
-            <p className="page-subtitle">Organizational business units and reporting hierarchies.</p>
-          </div>
-
-          {canEdit && (
-            <div className="page-header-actions">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleOpenCreate}
-              >
-                <Plus size={15} style={{ marginRight: '6px' }} />
-                New Department
-              </button>
+        {!loading && !canView ? (
+          <div className="restricted-access-card">
+            <ShieldAlert size={48} style={{ color: 'var(--coral)', margin: '0 auto 1rem auto' }} />
+            <h2 className="font-display" style={{ fontSize: '1.25rem', color: 'var(--ink)', marginBottom: '0.5rem' }}>
+              Access Restricted
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              Please sign in to view organizational business units and departments.
+            </p>
+            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', background: 'var(--muted)', borderRadius: 'var(--r-pill)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Logged in as: {currentUser?.role ? currentUser.role.toUpperCase() : 'GUEST'}
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            <div className="page-header-row">
+              <div className="page-header-left">
+                <h1 className="page-title font-display">Departments</h1>
+                <p className="page-subtitle">
+                  {canManage 
+                    ? 'Organizational business units and reporting hierarchies.' 
+                    : 'Organizational business units and reporting hierarchies (Read-only).'}
+                </p>
+              </div>
+
+              {canManage && (
+                <div className="page-header-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleOpenCreate}
+                    id="btn-new-department"
+                  >
+                    <Plus size={15} style={{ marginRight: '6px' }} />
+                    New Department
+                  </button>
+                </div>
+              )}
+            </div>
 
         {/* Toolbar */}
         <div className="toolbar-cluster">
@@ -212,8 +237,9 @@ const DepartmentList = () => {
                   return (
                     <tr 
                       key={dept.id}
-                      onClick={() => canEdit && handleSelectDept(dept)}
-                      className={canEdit ? "cursor-pointer" : ""}
+                      onClick={() => canManage && handleSelectDept(dept)}
+                      className={canManage ? "cursor-pointer" : ""}
+                      style={!canManage ? { cursor: 'default' } : {}}
                     >
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -247,7 +273,9 @@ const DepartmentList = () => {
             </table>
           )}
         </div>
-      </div>
+      </>
+    )}
+  </div>
 
       {/* Create / Edit Drawer */}
       {isDrawerOpen && (

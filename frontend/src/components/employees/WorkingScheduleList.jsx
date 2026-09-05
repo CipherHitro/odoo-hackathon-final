@@ -14,7 +14,8 @@ import {
   Coffee,
   Briefcase,
   Globe,
-  Edit2
+  Edit2,
+  ShieldAlert
 } from 'lucide-react';
 import AppLayout from '../AppLayout';
 import { 
@@ -24,7 +25,7 @@ import {
   updateWorkingSchedule 
 } from '../../api/employees';
 import { getCurrentUser } from '../../api/auth';
-import { canManageEmployees } from '../../utils/rbac';
+import { canManageSchedules } from '../../utils/rbac';
 
 const DAYS_OF_WEEK = [
   { key: 'monday', label: 'Monday', short: 'Mon' },
@@ -253,7 +254,7 @@ const WorkingScheduleList = () => {
     }
   };
 
-  const canEdit = canManageEmployees(currentUser);
+  const canEdit = canManageSchedules(currentUser);
 
   const filteredSchedules = schedules.filter(s =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -269,7 +270,20 @@ const WorkingScheduleList = () => {
           </div>
         )}
 
-        {isFormOpen ? (
+        {!loading && !canEdit ? (
+          <div className="restricted-access-card">
+            <ShieldAlert size={48} style={{ color: 'var(--coral)', margin: '0 auto 1rem auto' }} />
+            <h2 className="font-display" style={{ fontSize: '1.25rem', color: 'var(--ink)', marginBottom: '0.5rem' }}>
+              Access Restricted
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              Working schedules, shift templates, and weekly working hour configurations are confidential and restricted to HR Managers and Administrators.
+            </p>
+            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', background: 'var(--muted)', borderRadius: 'var(--r-pill)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Logged in as: {currentUser?.role ? currentUser.role.toUpperCase() : 'EMPLOYEE'}
+            </div>
+          </div>
+        ) : isFormOpen ? (
           /* Working Schedule Form Screen per 01-employees.md §6 */
           <div className="working-schedule-form-view">
             <div className="detail-top-nav">

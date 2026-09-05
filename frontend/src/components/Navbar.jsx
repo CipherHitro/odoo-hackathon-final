@@ -13,7 +13,17 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { getCurrentUser, logoutUser } from '../api/auth';
-import { isAdmin } from '../utils/rbac';
+import { 
+  isAdmin, 
+  canManageEmployees, 
+  canManageContracts, 
+  canManageDepartments, 
+  canViewDepartments,
+  canManageSchedules, 
+  canManageTimeOff, 
+  canAccessPayroll, 
+  canViewSalaryStructures 
+} from '../utils/rbac';
 
 const Navbar = ({ activeModule: explicitActiveModule }) => {
   const location = useLocation();
@@ -168,63 +178,71 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
                     onClick={() => setOpenDropdown(null)}
                   >
                     <Users size={15} />
-                    <span>Employees List</span>
+                    <span>{canManageEmployees(user) ? 'Employees List' : 'My Profile'}</span>
                   </NavLink>
-                  <NavLink
-                    to="/departments"
-                    className="navbar-dropdown-link"
-                    onClick={() => setOpenDropdown(null)}
-                  >
-                    <Layers size={15} />
-                    <span>Departments</span>
-                  </NavLink>
-                  <NavLink
-                    to="/working-schedules"
-                    className="navbar-dropdown-link"
-                    onClick={() => setOpenDropdown(null)}
-                  >
-                    <Calendar size={15} />
-                    <span>Working Schedules</span>
-                  </NavLink>
+                  {canViewDepartments(user) && (
+                    <NavLink
+                      to="/departments"
+                      className="navbar-dropdown-link"
+                      onClick={() => setOpenDropdown(null)}
+                    >
+                      <Layers size={15} />
+                      <span>Departments</span>
+                    </NavLink>
+                  )}
+                  {canManageSchedules(user) && (
+                    <NavLink
+                      to="/working-schedules"
+                      className="navbar-dropdown-link"
+                      onClick={() => setOpenDropdown(null)}
+                    >
+                      <Calendar size={15} />
+                      <span>Working Schedules</span>
+                    </NavLink>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* 2. Contracts Dropdown */}
-            <div className={`navbar-item ${active === 'contracts' ? 'is-active' : ''}`}>
-              <button
-                type="button"
-                className="navbar-tab-button"
-                onClick={() => toggleDropdown('contracts')}
-                aria-expanded={openDropdown === 'contracts'}
-              >
-                <span>Contracts</span>
-                <ChevronDown size={13} className={`dropdown-chevron ${openDropdown === 'contracts' ? 'is-rotated' : ''}`} />
-              </button>
+            {/* 2. Contracts Dropdown - Hidden for regular Employees per permission.txt */}
+            {canManageContracts(user) && (
+              <div className={`navbar-item ${active === 'contracts' ? 'is-active' : ''}`}>
+                <button
+                  type="button"
+                  className="navbar-tab-button"
+                  onClick={() => toggleDropdown('contracts')}
+                  aria-expanded={openDropdown === 'contracts'}
+                >
+                  <span>Contracts</span>
+                  <ChevronDown size={13} className={`dropdown-chevron ${openDropdown === 'contracts' ? 'is-rotated' : ''}`} />
+                </button>
 
-              {openDropdown === 'contracts' && (
-                <div className="navbar-dropdown-menu">
-                  <NavLink
-                    to="/contracts"
-                    className="navbar-dropdown-link"
-                    onClick={() => setOpenDropdown(null)}
-                  >
-                    <Briefcase size={15} />
-                    <span>All Contracts</span>
-                  </NavLink>
-                  <NavLink
-                    to="/salary-structures"
-                    className="navbar-dropdown-link"
-                    onClick={() => setOpenDropdown(null)}
-                  >
-                    <FileText size={15} />
-                    <span>Salary Structures</span>
-                  </NavLink>
-                </div>
-              )}
-            </div>
+                {openDropdown === 'contracts' && (
+                  <div className="navbar-dropdown-menu">
+                    <NavLink
+                      to="/contracts"
+                      className="navbar-dropdown-link"
+                      onClick={() => setOpenDropdown(null)}
+                    >
+                      <Briefcase size={15} />
+                      <span>All Contracts</span>
+                    </NavLink>
+                    {canViewSalaryStructures(user) && (
+                      <NavLink
+                        to="/salary-structures"
+                        className="navbar-dropdown-link"
+                        onClick={() => setOpenDropdown(null)}
+                      >
+                        <FileText size={15} />
+                        <span>Salary Structures</span>
+                      </NavLink>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* 3. Attendance Direct Link */}
+            {/* 3. Attendance Direct Link - Available to all authenticated users */}
             <div className={`navbar-item ${active === 'attendance' ? 'is-active' : ''}`}>
               <NavLink
                 to="/attendance"
@@ -265,28 +283,32 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
                     <CheckCircle2 size={15} />
                     <span>Allocations</span>
                   </NavLink>
-                  <NavLink
-                    to="/time-off/types"
-                    className="navbar-dropdown-link"
-                    onClick={() => setOpenDropdown(null)}
-                  >
-                    <Layers size={15} />
-                    <span>Leave Types</span>
-                  </NavLink>
+                  {canManageTimeOff(user) && (
+                    <NavLink
+                      to="/time-off/types"
+                      className="navbar-dropdown-link"
+                      onClick={() => setOpenDropdown(null)}
+                    >
+                      <Layers size={15} />
+                      <span>Leave Types</span>
+                    </NavLink>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* 5. Payroll Direct Link */}
-            <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
-              <NavLink
-                to="/dashboard"
-                className="navbar-tab-button"
-                onClick={() => setOpenDropdown(null)}
-              >
-                <span>Payroll</span>
-              </NavLink>
-            </div>
+            {/* 5. Payroll Direct Link - Accessible only to Payroll roles & Admin per permission.txt */}
+            {canAccessPayroll(user) && (
+              <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
+                <NavLink
+                  to="/dashboard"
+                  className="navbar-tab-button"
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <span>Payroll</span>
+                </NavLink>
+              </div>
+            )}
 
             {/* 6. Admin Only - User Management Link */}
             {isAdmin(user) && (

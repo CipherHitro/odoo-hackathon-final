@@ -7,12 +7,13 @@ import {
   CheckCircle2, 
   AlertCircle,
   FileCode,
-  Check
+  Check,
+  ShieldAlert
 } from 'lucide-react';
 import AppLayout from '../AppLayout';
 import { getSalaryStructures, getSalaryStructureById } from '../../api/contracts';
 import { getCurrentUser } from '../../api/auth';
-import { canManagePayroll } from '../../utils/rbac';
+import { canViewSalaryStructures, canEditSalaryStructures } from '../../utils/rbac';
 
 const SalaryStructureList = () => {
   const [structures, setStructures] = useState([]);
@@ -56,6 +57,9 @@ const SalaryStructureList = () => {
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const isAuthorized = canViewSalaryStructures(currentUser);
+  const canEdit = canEditSalaryStructures(currentUser);
+
   return (
     <AppLayout activeModule="contracts">
       <div className="page-container">
@@ -66,7 +70,20 @@ const SalaryStructureList = () => {
           </div>
         )}
 
-        {selectedStructure ? (
+        {!loading && !isAuthorized ? (
+          <div className="restricted-access-card">
+            <ShieldAlert size={48} style={{ color: 'var(--coral)', margin: '0 auto 1rem auto' }} />
+            <h2 className="font-display" style={{ fontSize: '1.25rem', color: 'var(--ink)', marginBottom: '0.5rem' }}>
+              Access Restricted
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              Salary structures, compensation calculation rules, and payroll configurations are confidential and restricted to Payroll Users and Administrators.
+            </p>
+            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', background: 'var(--muted)', borderRadius: 'var(--r-pill)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Logged in as: {currentUser?.role ? currentUser.role.toUpperCase() : 'EMPLOYEE'}
+            </div>
+          </div>
+        ) : selectedStructure ? (
           /* Salary Structure Form Screen per 05-payroll.md §Screen: Salary Structure — Form */
           <div className="structure-detail-view">
             <div className="detail-top-nav" style={{ marginBottom: '16px' }}>

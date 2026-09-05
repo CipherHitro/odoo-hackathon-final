@@ -9,12 +9,13 @@ import {
   AlertCircle,
   CheckCircle2,
   Lock,
-  User as UserIcon
+  User as UserIcon,
+  ShieldAlert
 } from 'lucide-react';
 import AppLayout from '../AppLayout';
 import { listUsers, registerUser, updateUser, getCurrentUser } from '../../api/auth';
 import { getEmployees } from '../../api/employees';
-import { UserRole, getDepartmentColor } from '../../utils/rbac';
+import { UserRole, getDepartmentColor, canManageUsers } from '../../utils/rbac';
 
 const ROLE_OPTIONS = [
   { id: UserRole.EMPLOYEE, label: 'Employee', desc: 'Can view own profile, submit leave, and track attendance' },
@@ -178,6 +179,8 @@ const UserManagement = () => {
     return matchesSearch && matchesRole;
   });
 
+  const isAuthorized = canManageUsers(currentUser);
+
   return (
     <AppLayout activeModule="admin">
       <div className="page-container">
@@ -189,15 +192,30 @@ const UserManagement = () => {
           </div>
         )}
 
-        {/* Header Strip per 07-auth-admin.md */}
-        <div className="page-header-row">
-          <div className="page-header-left">
-            <div className="page-title-cluster">
-              <h1 className="page-title font-display">User Management</h1>
-              <span className="admin-outline-pill">ADMIN ONLY</span>
+        {!loading && !isAuthorized ? (
+          <div className="restricted-access-card">
+            <ShieldAlert size={48} style={{ color: 'var(--coral)', margin: '0 auto 1rem auto' }} />
+            <h2 className="font-display" style={{ fontSize: '1.25rem', color: 'var(--ink)', marginBottom: '0.5rem' }}>
+              Access Restricted
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              User management, role assignments, and security administration are restricted to System Administrators.
+            </p>
+            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', background: 'var(--muted)', borderRadius: 'var(--r-pill)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Logged in as: {currentUser?.role ? currentUser.role.toUpperCase() : 'EMPLOYEE'}
             </div>
-            <p className="page-subtitle">Configure system users, assign role-based access, and manage accounts.</p>
           </div>
+        ) : (
+          <>
+            {/* Header Strip per 07-auth-admin.md */}
+            <div className="page-header-row">
+              <div className="page-header-left">
+                <div className="page-title-cluster">
+                  <h1 className="page-title font-display">User Management</h1>
+                  <span className="admin-outline-pill">ADMIN ONLY</span>
+                </div>
+                <p className="page-subtitle">Configure system users, assign role-based access, and manage accounts.</p>
+              </div>
 
           <div className="page-header-actions">
             <button
@@ -349,7 +367,9 @@ const UserManagement = () => {
             </table>
           )}
         </div>
-      </div>
+      </>
+    )}
+  </div>
 
       {/* Side Panel: Create / Edit User per 07-auth-admin.md */}
       {isPanelOpen && (

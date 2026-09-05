@@ -354,7 +354,7 @@ const AttendancePage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
 
 
-            {employees.length > 0 && (
+            {isAdminOrHr && employees.length > 0 && (
               <select
                 className={`filter-pill ${selectedEmployeeFilter ? 'is-active' : ''}`}
                 value={selectedEmployeeFilter}
@@ -375,7 +375,6 @@ const AttendancePage = () => {
                 type="button"
                 className="filter-pill"
                 onClick={() => {
-// setFilterToday removed as it was undefined
                   setSelectedEmployeeFilter('');
                   setSearchQuery('');
                 }}

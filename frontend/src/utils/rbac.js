@@ -1,4 +1,5 @@
 // Role-Based Access Control (RBAC) Constants & Helpers for PeoplePay360
+// Aligned strictly with permission.txt specification
 
 export const UserRole = {
   ADMIN: 'admin',
@@ -14,33 +15,125 @@ export const hasRole = (user, allowedRoles = []) => {
   return allowedRoles.includes(user.role);
 };
 
-// Permission helpers
+// Admin only
 export const isAdmin = (user) => {
   return user?.role === UserRole.ADMIN;
 };
 
+// HR roles (anyone with administrative HR / Payroll / Admin privileges)
+export const isHrOrAdmin = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_MANAGER,
+    UserRole.HR_PAYROLL_ADMIN,
+    UserRole.HR_PAYROLL_USER,
+  ].includes(user?.role);
+};
+
+// Check if user is a standard regular employee
+export const isRegularEmployee = (user) => {
+  return user?.role === UserRole.EMPLOYEE;
+};
+
+// Can manage / CRUD Employees (HR Manager, HR Payroll User, HR Payroll Admin, Admin)
+// Per permission.txt: Regular employee can only view own profile and limited edit of own.
 export const canManageEmployees = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER].includes(user?.role);
+  return isHrOrAdmin(user);
 };
 
-export const canManagePayroll = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
-};
-
-export const canApproveTimeOff = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER].includes(user?.role);
-};
-
-export const canManageAttendance = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER].includes(user?.role);
-};
-
+// Can manage / CRUD Contracts (HR Manager, HR Payroll User, HR Payroll Admin, Admin)
+// Per permission.txt: Regular employee has NO access (403/hidden)
 export const canManageContracts = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
+  return isHrOrAdmin(user);
 };
 
 export const canEditContracts = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN].includes(user?.role);
+  return isHrOrAdmin(user);
+};
+
+// Can manage Working Schedules (HR Manager, HR Payroll User, HR Payroll Admin, Admin)
+// Per permission.txt: Regular employee has NO access
+export const canManageSchedules = (user) => {
+  return isHrOrAdmin(user);
+};
+
+// Can view Departments: All authenticated users (Employee and HR Payroll User have READ-ONLY access)
+export const canViewDepartments = (user) => {
+  return Boolean(user && user.role);
+};
+
+// Can manage / CRUD Departments (HR Manager, HR Payroll Admin, Admin only)
+// Employee and HR Payroll User have READ-ONLY access.
+export const canManageDepartments = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_MANAGER,
+    UserRole.HR_PAYROLL_ADMIN,
+  ].includes(user?.role);
+};
+
+// Can manage Attendance logs / manual entries
+// Per permission.txt: Employee can view own and check-in/out. HR/Admin can view all and make manual corrections.
+export const canManageAttendance = (user) => {
+  return isHrOrAdmin(user);
+};
+
+// Can approve / refuse time off requests
+// Per permission.txt: Employee creates own. HR/Admin approves/refuses.
+export const canApproveTimeOff = (user) => {
+  return isHrOrAdmin(user);
+};
+
+// Can manage Allocations & Leave Types
+// Per permission.txt: Employee only views own balance. HR/Admin manages allocations and leave types.
+export const canManageTimeOff = (user) => {
+  return isHrOrAdmin(user);
+};
+
+// Payroll / Payruns access
+// Per permission.txt:
+// - Employee: NO access
+// - HR Manager: NO access
+// - HR Payroll User: Manage
+// - HR Payroll Admin: Full CRUD
+// - Admin: Full CRUD
+export const canManagePayroll = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN,
+    UserRole.HR_PAYROLL_USER,
+  ].includes(user?.role);
+};
+
+export const canAccessPayroll = (user) => {
+  return canManagePayroll(user);
+};
+
+// Salary Structures & Salary Rules
+// Per permission.txt:
+// - Employee: NO access
+// - HR Manager: NO access
+// - HR Payroll User: Read-only (can View)
+// - HR Payroll Admin: Full CRUD
+// - Admin: Full CRUD
+export const canViewSalaryStructures = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN,
+    UserRole.HR_PAYROLL_USER,
+  ].includes(user?.role);
+};
+
+export const canEditSalaryStructures = (user) => {
+  return [
+    UserRole.ADMIN,
+    UserRole.HR_PAYROLL_ADMIN,
+  ].includes(user?.role);
+};
+
+// User Management (Admin only)
+export const canManageUsers = (user) => {
+  return isAdmin(user);
 };
 
 // Department color mapping per 01-employees.md §1

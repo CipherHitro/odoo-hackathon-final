@@ -10,7 +10,14 @@ from app.schemas.department import DepartmentCreate, DepartmentUpdate, Departmen
 
 router = APIRouter(prefix="/departments", tags=["Departments"])
 
-HR_ROLES = tuple(role.value for role in UserRole if role != UserRole.EMPLOYEE)
+# Permissions:
+# - Employee and HR Payroll User have read-only access (GET).
+# - HR Manager, HR Payroll Admin, and Admin have full CRUD (POST, PATCH).
+DEPARTMENT_MANAGE_ROLES = (
+    UserRole.HR_MANAGER.value,
+    UserRole.HR_PAYROLL_ADMIN.value,
+    UserRole.ADMIN.value,
+)
 
 
 @router.get("/", response_model=List[DepartmentResponse])
@@ -18,17 +25,17 @@ async def get_departments(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all departments (all authenticated users)."""
+    """List all departments (all authenticated users, including Employee and HR Payroll User)."""
     return await DepartmentController.get_all(db)
 
 
 @router.post("/", response_model=DepartmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_department(
     data: DepartmentCreate,
-    current_user: User = Depends(require_roles(*HR_ROLES)),
+    current_user: User = Depends(require_roles(*DEPARTMENT_MANAGE_ROLES)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new department (HR/Admin only)."""
+    """Create a new department (HR Manager, HR Payroll Admin, Admin only)."""
     return await DepartmentController.create(db, data)
 
 
@@ -46,8 +53,8 @@ async def get_department(
 async def update_department(
     dept_id: int,
     data: DepartmentUpdate,
-    current_user: User = Depends(require_roles(*HR_ROLES)),
+    current_user: User = Depends(require_roles(*DEPARTMENT_MANAGE_ROLES)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update department (HR/Admin only)."""
+    """Update department (HR Manager, HR Payroll Admin, Admin only)."""
     return await DepartmentController.update(db, dept_id, data)
