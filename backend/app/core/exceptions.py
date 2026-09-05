@@ -66,6 +66,18 @@ class InvalidDateRangeError(AppError):
     """Raised when an end_date is earlier than start_date."""
 
 
+class ContractOverlapError(AppError):
+    """Raised when a running contract overlaps with another running contract for the same employee."""
+
+
+class ContractValidationError(AppError):
+    """Raised when contract input violates domain rules (e.g. invalid wage, foreign keys, or dates)."""
+
+
+class ContractInUseError(AppError):
+    """Raised when attempting to delete a contract that is referenced by payslips or payroll records."""
+
+
 # =============================================================================
 # Attendance Domain Errors
 # =============================================================================

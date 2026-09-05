@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.models.contract import ContractStatus
 
 
@@ -11,7 +11,7 @@ class ContractBase(BaseModel):
     job_position: Optional[str] = None
     start_date: date
     end_date: Optional[date] = None
-    wage_monthly: Decimal
+    wage_monthly: Decimal = Field(gt=0, description="Monthly wage must be greater than zero")
     working_schedule_id: Optional[int] = None
     salary_structure_id: Optional[int] = None
     status: ContractStatus = ContractStatus.DRAFT
@@ -21,7 +21,7 @@ class ContractBase(BaseModel):
 class ContractCreate(BaseModel):
     employee_id: int
     start_date: date
-    wage_monthly: Decimal
+    wage_monthly: Decimal = Field(gt=0, description="Monthly wage must be greater than zero")
     department_id: Optional[int] = None
     job_position: Optional[str] = None
     end_date: Optional[date] = None
@@ -30,17 +30,31 @@ class ContractCreate(BaseModel):
     status: ContractStatus = ContractStatus.DRAFT
     notes: Optional[str] = None
 
+    @model_validator(mode="after")
+    def validate_dates(self) -> "ContractCreate":
+        if self.end_date is not None:
+            if self.end_date <= self.start_date:
+                raise ValueError("End date cannot be on or before start date.")
+        return self
+
 
 class ContractUpdate(BaseModel):
     department_id: Optional[int] = None
     job_position: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    wage_monthly: Optional[Decimal] = None
+    wage_monthly: Optional[Decimal] = Field(default=None, gt=0, description="Monthly wage must be greater than zero")
     working_schedule_id: Optional[int] = None
     salary_structure_id: Optional[int] = None
     status: Optional[ContractStatus] = None
     notes: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_dates(self) -> "ContractUpdate":
+        if self.start_date is not None and self.end_date is not None:
+            if self.end_date <= self.start_date:
+                raise ValueError("End date cannot be on or before start date.")
+        return self
 
 
 class ContractResponse(ContractBase):

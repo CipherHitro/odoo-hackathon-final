@@ -1,7 +1,7 @@
 import enum
 from decimal import Decimal
 from datetime import date
-from sqlalchemy import String, ForeignKey, Numeric, Date, Text
+from sqlalchemy import String, ForeignKey, Numeric, Date, Text, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -13,6 +13,10 @@ class ContractStatus(str, enum.Enum):
 
 class Contract(Base):
     __tablename__ = "contracts"
+    __table_args__ = (
+        CheckConstraint("wage_monthly > 0", name="check_positive_contract_wage"),
+        CheckConstraint("end_date IS NULL OR end_date > start_date", name="check_contract_dates"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     reference: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)  # e.g. CON/2026/0042

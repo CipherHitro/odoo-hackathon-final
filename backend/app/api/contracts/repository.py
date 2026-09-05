@@ -1,5 +1,6 @@
 from datetime import date
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, and_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import List, Tuple
@@ -10,6 +11,47 @@ from app.schemas.contract import ContractCreate, ContractUpdate
 
 
 class ContractRepository:
+
+    @classmethod
+    async def find_overlapping_running_contract(
+        cls,
+        db: AsyncSession,
+        employee_id: int,
+        start_date: date,
+        end_date: date | None,
+        exclude_contract_id: int | None = None,
+    ) -> Contract | None:
+        """Find any existing active/running contract for this employee that overlaps with the given period."""
+        today = date.today()
+
+        conditions = [
+            Contract.employee_id == employee_id,
+            Contract.status == ContractStatus.RUNNING.value,
+            or_(Contract.end_date == None, Contract.end_date >= today),
+        ]
+
+        if exclude_contract_id is not None:
+            conditions.append(Contract.id != exclude_contract_id)
+
+        # 1. New start <= Existing end (or existing end is None)
+        conditions.append(or_(Contract.end_date == None, Contract.end_date >= start_date))
+
+        # 2. Existing start <= New end (if new end is not None)
+        if end_date is not None:
+            conditions.append(Contract.start_date <= end_date)
+
+        query = select(Contract).where(and_(*conditions)).limit(1)
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def has_associated_payslips(db: AsyncSession, contract_id: int) -> bool:
+        from app.models.payroll import Payslip
+        result = await db.execute(
+            select(func.count(Payslip.id)).where(Payslip.contract_id == contract_id)
+        )
+        count = result.scalar() or 0
+        return count > 0
 
     @staticmethod
     async def generate_reference(db: AsyncSession, start_date: date) -> str:
@@ -157,8 +199,6 @@ class ContractRepository:
 
     @classmethod
     async def create(cls, db: AsyncSession, data: ContractCreate) -> Contract:
-        reference = await cls.generate_reference(db, data.start_date)
-
         # Inherit defaults from employee if not provided
         employee = await db.get(Employee, data.employee_id)
         department_id = data.department_id
@@ -179,28 +219,34 @@ class ContractRepository:
             else str(data.status)
         )
 
-        contract = Contract(
-            reference=reference,
-            employee_id=data.employee_id,
-            department_id=department_id,
-            job_position=job_position,
-            start_date=data.start_date,
-            end_date=data.end_date,
-            wage_monthly=data.wage_monthly,
-            working_schedule_id=working_schedule_id,
-            salary_structure_id=data.salary_structure_id,
-            status=status_val,
-            notes=data.notes,
-        )
+        for attempt in range(5):
+            reference = await cls.generate_reference(db, data.start_date)
+            contract = Contract(
+                reference=reference,
+                employee_id=data.employee_id,
+                department_id=department_id,
+                job_position=job_position,
+                start_date=data.start_date,
+                end_date=data.end_date,
+                wage_monthly=data.wage_monthly,
+                working_schedule_id=working_schedule_id,
+                salary_structure_id=data.salary_structure_id,
+                status=status_val,
+                notes=data.notes,
+            )
 
-        cls._check_and_update_expired(contract)
+            cls._check_and_update_expired(contract)
 
-        db.add(contract)
-        await db.commit()
-        await db.refresh(contract)
-
-        # Reload with relationships
-        return await cls.get_by_id(db, contract.id)  # type: ignore
+            db.add(contract)
+            try:
+                await db.commit()
+                await db.refresh(contract)
+                return await cls.get_by_id(db, contract.id)  # type: ignore
+            except IntegrityError as e:
+                await db.rollback()
+                if "reference" in str(e).lower() and attempt < 4:
+                    continue
+                raise
 
     @classmethod
     async def update(

@@ -79,7 +79,7 @@ class PayrollEngine:
         # 2. Iterate employees
         for emp_id in employee_ids:
             # 3. Find applicable contract
-            contract = await PayrunRepository.get_active_contract(db, emp_id, payrun.date_from, payrun.date_to)
+            contract, contract_warning = await PayrunRepository.get_applicable_contract(db, emp_id, payrun.date_from, payrun.date_to)
             
             payslip = Payslip(
                 payrun_id=payrun.id,
@@ -100,7 +100,7 @@ class PayrollEngine:
             
             if not contract:
                 payslip.has_warning = True
-                payslip.warning_message = "No active running contract found for this period."
+                payslip.warning_message = contract_warning or "No active running contract found for this period."
                 payslips.append(payslip)
                 continue
 

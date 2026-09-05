@@ -49,7 +49,13 @@ class PayrunRepository:
         await db.commit()
 
     @staticmethod
-    async def get_active_contract(db: AsyncSession, employee_id: int, date_from: date, date_to: date) -> Contract | None:
+    async def get_applicable_contract(
+        db: AsyncSession, employee_id: int, date_from: date, date_to: date
+    ) -> tuple[Contract | None, str | None]:
+        from app.models.employee import Employee
+        employee = await db.get(Employee, employee_id)
+        emp_name = employee.name if employee else f"Employee #{employee_id}"
+
         result = await db.execute(
             select(Contract)
             .options(
@@ -58,16 +64,23 @@ class PayrunRepository:
             .where(
                 and_(
                     Contract.employee_id == employee_id,
-                    Contract.status == ContractStatus.RUNNING,
+                    Contract.status.in_([ContractStatus.RUNNING.value, ContractStatus.EXPIRED.value]),
                     Contract.start_date <= date_to,
                     or_(Contract.end_date == None, Contract.end_date >= date_from)
                 )
             )
         )
         contracts = result.scalars().all()
-        if len(contracts) != 1:
-            return None # Ambiguous or missing
-        return contracts[0]
+        if len(contracts) == 0:
+            return None, f"No applicable contract found for {emp_name} for this payroll period."
+        if len(contracts) > 1:
+            return None, f"Multiple applicable contracts found for {emp_name} for this payroll period."
+        return contracts[0], None
+
+    @staticmethod
+    async def get_active_contract(db: AsyncSession, employee_id: int, date_from: date, date_to: date) -> Contract | None:
+        contract, _ = await PayrunRepository.get_applicable_contract(db, employee_id, date_from, date_to)
+        return contract
 
     @staticmethod
     async def get_attendance_hours(db: AsyncSession, employee_id: int, date_from: date, date_to: date) -> float:

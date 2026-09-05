@@ -87,9 +87,20 @@ const ContractDetail = ({
       setError('Please specify a start date.');
       return;
     }
-    if (formData.end_date && formData.end_date < formData.start_date) {
-      setError('End date cannot be earlier than start date.');
+    const wageNum = parseFloat(formData.wage_monthly);
+    if (!formData.wage_monthly || isNaN(wageNum) || wageNum <= 0) {
+      setError('Wage must be a valid positive number greater than zero.');
       return;
+    }
+    if (!formData.status) {
+      setError('Please select a contract status.');
+      return;
+    }
+    if (formData.end_date) {
+      if (formData.end_date <= formData.start_date) {
+        setError('End date cannot be on or before start date.');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -99,7 +110,7 @@ const ContractDetail = ({
         employee_id: parseInt(formData.employee_id, 10),
         start_date: formData.start_date,
         end_date: formData.end_date ? formData.end_date : null,
-        wage_monthly: parseFloat(formData.wage_monthly) || 0,
+        wage_monthly: wageNum,
         department_id: formData.department_id ? parseInt(formData.department_id, 10) : null,
         job_position: formData.job_position ? formData.job_position.trim() : null,
         working_schedule_id: formData.working_schedule_id ? parseInt(formData.working_schedule_id, 10) : null,

@@ -15,6 +15,10 @@ async def get_current_user(
 ) -> User:
     """FastAPI dependency: resolve the authenticated user from the auth cookie."""
     token = request.cookies.get(settings.COOKIE_NAME)
+    if not token:
+        auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+        if auth_header and auth_header.lower().startswith("bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
 
     if not token:
         raise HTTPException(
