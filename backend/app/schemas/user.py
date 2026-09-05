@@ -11,6 +11,13 @@ class UserRegister(BaseModel):
     is_active: bool = True
 
 
+class UserUpdate(BaseModel):
+    name: str | None = None
+    email: EmailStr | None = None
+    role: UserRole | None = None
+    is_active: bool | None = None
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str

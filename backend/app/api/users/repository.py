@@ -78,3 +78,18 @@ class UserRepository:
 
         db.add(user)
         await db.commit()
+
+    @staticmethod
+    async def get_all(db: AsyncSession) -> list[User]:
+        result = await db.execute(select(User).order_by(User.id.asc()))
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def update(db: AsyncSession, user: User, **fields) -> User:
+        for key, val in fields.items():
+            if val is not None:
+                setattr(user, key, val)
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        return user

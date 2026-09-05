@@ -58,6 +58,27 @@ class UserController:
         )
 
     @staticmethod
+    async def get_all(db: AsyncSession) -> list[UserResponse]:
+        users = await UserService.get_all(db)
+        return [UserResponse.model_validate(u) for u in users]
+
+    @staticmethod
+    async def update(db: AsyncSession, user_id: int, data, current_user: User) -> UserResponse:
+        try:
+            user = await UserService.update(db, user_id, data, current_user)
+            return UserResponse.model_validate(user)
+        except UserNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(exc),
+            ) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+
+    @staticmethod
     async def login(
         db: AsyncSession,
         data: UserLogin,

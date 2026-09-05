@@ -88,6 +88,27 @@ class UserService:
         """Issue a signed JWT for the given user."""
         return create_access_token(user.id)
 
+    @staticmethod
+    async def get_all(db: AsyncSession) -> list[User]:
+        return await UserRepository.get_all(db)
+
+    @staticmethod
+    async def update(db: AsyncSession, user_id: int, data, current_user: User) -> User:
+        user = await UserRepository.get_by_id(db, user_id)
+        if not user:
+            raise UserNotFoundError("User not found")
+
+        # Prevent admin from changing their own role
+        if current_user.id == user_id and data.role is not None and data.role.value != user.role:
+            from app.core.exceptions import AppError
+            raise AppError("You cannot modify your own administrative role.")
+
+        update_data = data.model_dump(exclude_unset=True)
+        if "role" in update_data and update_data["role"] is not None:
+            update_data["role"] = update_data["role"].value if hasattr(update_data["role"], "value") else str(update_data["role"])
+
+        return await UserRepository.update(db, user, **update_data)
+
 
 class PasswordResetService:
     """Business logic for the forgot password / verify otp / reset password flow."""

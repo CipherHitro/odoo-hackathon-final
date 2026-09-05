@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_admin_or_bootstrap, get_current_user
+from app.api.deps import get_current_admin_or_bootstrap, get_current_user, require_roles
 from app.api.users.controller import UserController
 from app.core.cookies import clear_auth_cookie
 from app.core.database import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import (
     AuthResponse,
     ForgotPasswordRequest,
@@ -14,6 +14,7 @@ from app.schemas.user import (
     UserLogin,
     UserRegister,
     UserResponse,
+    UserUpdate,
     VerifyOTPRequest,
     VerifyOTPResponse,
 )
@@ -123,3 +124,27 @@ async def reset_password(
 ):
 
     return await UserController.reset_password(db, data)
+
+
+@router.get(
+    "/users",
+    response_model=list[UserResponse],
+)
+async def list_users(
+    current_admin: User = Depends(require_roles(UserRole.ADMIN.value)),
+    db: AsyncSession = Depends(get_db),
+):
+    return await UserController.get_all(db)
+
+
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserResponse,
+)
+async def update_user(
+    user_id: int,
+    data: UserUpdate,
+    current_admin: User = Depends(require_roles(UserRole.ADMIN.value)),
+    db: AsyncSession = Depends(get_db),
+):
+    return await UserController.update(db, user_id, data, current_user=current_admin)
