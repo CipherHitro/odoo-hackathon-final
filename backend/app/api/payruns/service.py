@@ -19,7 +19,8 @@ class PayrunService:
 
     @staticmethod
     async def create_payrun(db: AsyncSession, data: PayrunCreate) -> Payrun:
-        return await PayrunRepository.create_payrun(db, **data.model_dump())
+        payrun = Payrun(**data.model_dump())
+        return await PayrunRepository.create_payrun(db, payrun)
 
     @staticmethod
     async def compute_payrun(db: AsyncSession, payrun_id: int, employee_ids: List[int] | None = None) -> Payrun:

@@ -7,8 +7,15 @@ from app.schemas.payroll import (
     SalaryStructureCreate, SalaryStructureUpdate, SalaryStructureResponse,
     SalaryRuleCreate, SalaryRuleUpdate, SalaryRuleResponse
 )
+from app.schemas.dashboard import DashboardResponse
 
 class PayrollController:
+    # --- Dashboard ---
+    @staticmethod
+    async def get_dashboard_metrics(db: AsyncSession) -> DashboardResponse:
+        metrics = await PayrollService.get_dashboard_metrics(db)
+        return DashboardResponse(**metrics)
+
     # --- Salary Structure ---
     @staticmethod
     async def get_structures(db: AsyncSession) -> List[SalaryStructureResponse]:

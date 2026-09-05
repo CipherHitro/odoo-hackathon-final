@@ -10,12 +10,19 @@ from app.schemas.payroll import (
     SalaryStructureCreate, SalaryStructureUpdate, SalaryStructureResponse,
     SalaryRuleCreate, SalaryRuleUpdate, SalaryRuleResponse
 )
+from app.schemas.dashboard import DashboardResponse
 
 router = APIRouter(prefix="/payroll", tags=["Payroll Configuration"])
 
 # RBAC groups
 READ_ROLES = [UserRole.HR_PAYROLL_USER, UserRole.HR_PAYROLL_ADMIN, UserRole.ADMIN]
 WRITE_ROLES = [UserRole.HR_PAYROLL_ADMIN, UserRole.ADMIN]
+
+# --- Dashboard ---
+@router.get("/dashboard", response_model=DashboardResponse, dependencies=[Depends(require_roles(*READ_ROLES))])
+async def get_dashboard_metrics(db: AsyncSession = Depends(get_db)):
+    """Retrieve aggregations for the Payroll Dashboard."""
+    return await PayrollController.get_dashboard_metrics(db)
 
 # --- Salary Structure ---
 @router.get("/structures", response_model=List[SalaryStructureResponse], dependencies=[Depends(require_roles(*READ_ROLES))])

@@ -31,12 +31,10 @@ class PayrunRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def create_payrun(db: AsyncSession, **kwargs) -> Payrun:
-        payrun = Payrun(**kwargs)
+    async def create_payrun(db: AsyncSession, payrun: Payrun) -> Payrun:
         db.add(payrun)
         await db.commit()
-        await db.refresh(payrun)
-        return payrun
+        return await PayrunRepository.get_payrun_by_id(db, payrun.id)
 
     @staticmethod
     async def update_payrun(db: AsyncSession, payrun: Payrun, **kwargs) -> Payrun:

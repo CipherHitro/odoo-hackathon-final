@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from app.api.payroll.repository import PayrollRepository
+from app.api.payroll.dashboard_repository import DashboardRepository
 from app.models.payroll import SalaryStructure, SalaryRule
 from app.schemas.payroll import (
     SalaryStructureCreate, SalaryStructureUpdate,
@@ -12,6 +13,20 @@ VALID_COMPUTATIONS = {"fixed", "percentage", "python"}
 VALID_CATEGORIES = {"BASIC", "GROSS", "NET", "ALLOWANCE", "DEDUCTION"}
 
 class PayrollService:
+    # --- Dashboard ---
+    @staticmethod
+    async def get_dashboard_metrics(db: AsyncSession) -> dict:
+        return {
+            "total_payroll": await DashboardRepository.get_total_payroll(db),
+            "average_salary": await DashboardRepository.get_average_salary(db),
+            "payslips_generated": await DashboardRepository.get_payslips_generated(db),
+            "approved_time_off": await DashboardRepository.get_approved_time_off(db),
+            "attendance_health": await DashboardRepository.get_attendance_health(db),
+            "cost_by_department": await DashboardRepository.get_cost_by_department(db),
+            "monthly_trend": await DashboardRepository.get_monthly_trend(db),
+            "missing_contracts": await DashboardRepository.get_missing_contracts(db)
+        }
+
     # --- Salary Structure ---
     @staticmethod
     async def get_structures(db: AsyncSession) -> List[SalaryStructure]:
