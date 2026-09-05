@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  ChevronDown, 
-  LogOut, 
-  Clock, 
-  CheckCircle2, 
-  Users, 
-  Briefcase, 
-  Calendar, 
-  Layers, 
-  FileText, 
+import {
+  ChevronDown,
+  LogOut,
+  Clock,
+  CheckCircle2,
+  Users,
+  Briefcase,
+  Calendar,
+  Layers,
+  FileText,
   ShieldCheck
 } from 'lucide-react';
 import { getCurrentUser, logoutUser } from '../api/auth';
@@ -30,7 +30,7 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
       .then((data) => {
         if (isMounted && data) setUser(data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     const fetchAttendanceStatus = () => {
       fetch('/attendance/widget')
@@ -40,7 +40,7 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
             setIsCheckedIn(data.is_checked_in || false);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     fetchAttendanceStatus();
@@ -328,8 +328,8 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
                 </div>
                 <div className="popover-body">
                   <p className="popover-desc">
-                    {isCheckedIn 
-                      ? "Your attendance timer is active. Wrap up your shift anytime." 
+                    {isCheckedIn
+                      ? "Your attendance timer is active. Wrap up your shift anytime."
                       : "Start tracking your worked hours today."}
                   </p>
                   <button
@@ -338,8 +338,8 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
                     onClick={handleQuickAttendance}
                     className={`btn ${isCheckedIn ? 'btn-danger' : 'btn-primary'} w-full`}
                   >
-                    {isTogglingAttendance 
-                      ? 'Updating...' 
+                    {isTogglingAttendance
+                      ? 'Updating...'
                       : isCheckedIn ? 'Check Out Now' : 'Check In Now'}
                   </button>
                 </div>
