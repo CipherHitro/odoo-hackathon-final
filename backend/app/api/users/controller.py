@@ -60,13 +60,34 @@ class UserController:
     @staticmethod
     async def get_all(db: AsyncSession) -> list[UserResponse]:
         users = await UserService.get_all(db)
-        return [UserResponse.model_validate(u) for u in users]
+        from app.models.employee import Employee
+        from sqlalchemy import select
+        emp_res = await db.execute(select(Employee))
+        emps = emp_res.scalars().all()
+        emp_by_uid = {e.user_id: e for e in emps if e.user_id}
+        emp_by_email = {e.work_email: e for e in emps if e.work_email}
+
+        res = []
+        for u in users:
+            emp = emp_by_uid.get(u.id) or emp_by_email.get(u.email)
+            st = emp.status if emp else ("active" if u.is_active else "inactive")
+            item = UserResponse.model_validate(u)
+            item.status = st
+            res.append(item)
+        return res
 
     @staticmethod
     async def update(db: AsyncSession, user_id: int, data, current_user: User) -> UserResponse:
         try:
             user = await UserService.update(db, user_id, data, current_user)
-            return UserResponse.model_validate(user)
+            from app.models.employee import Employee
+            from sqlalchemy import select
+            emp_res = await db.execute(select(Employee).where((Employee.user_id == user.id) | (Employee.work_email == user.email)))
+            emp = emp_res.scalar_one_or_none()
+            st = emp.status if emp else ("active" if user.is_active else "inactive")
+            resp = UserResponse.model_validate(user)
+            resp.status = st
+            return resp
         except UserNotFoundError as exc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

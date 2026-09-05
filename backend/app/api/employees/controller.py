@@ -17,8 +17,8 @@ class EmployeeController:
         return resp
 
     @classmethod
-    async def get_all(cls, db: AsyncSession) -> List[EmployeeResponse]:
-        employees = await EmployeeService.get_all(db)
+    async def get_all(cls, db: AsyncSession, include_archived: bool = False) -> List[EmployeeResponse]:
+        employees = await EmployeeService.get_all(db, include_archived=include_archived)
         return [cls._to_response(emp) for emp in employees]
 
     @classmethod

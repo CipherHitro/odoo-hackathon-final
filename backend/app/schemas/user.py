@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.models.employee import EmployeeStatus
 from app.models.user import UserRole
 
 
@@ -9,6 +10,7 @@ class UserRegister(BaseModel):
     password: str = Field(min_length=8)
     role: UserRole = UserRole.EMPLOYEE
     is_active: bool = True
+    status: EmployeeStatus = EmployeeStatus.ACTIVE
 
 
 class UserUpdate(BaseModel):
@@ -16,6 +18,7 @@ class UserUpdate(BaseModel):
     email: EmailStr | None = None
     role: UserRole | None = None
     is_active: bool | None = None
+    status: EmployeeStatus | None = None
 
 
 class UserLogin(BaseModel):
@@ -29,6 +32,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: str
     is_active: bool
+    status: str = "active"
 
     model_config = ConfigDict(
         from_attributes=True

@@ -44,6 +44,7 @@ const UserManagement = () => {
     email: '',
     password: '',
     role: UserRole.EMPLOYEE,
+    status: 'active',
     is_active: true,
     employee_id: '',
   });
@@ -86,6 +87,7 @@ const UserManagement = () => {
       email: '',
       password: 'Password123!',
       role: UserRole.EMPLOYEE,
+      status: 'active',
       is_active: true,
       employee_id: '',
     });
@@ -95,13 +97,15 @@ const UserManagement = () => {
   const handleSelectRow = (user) => {
     setSelectedUser(user);
     const linkedEmp = employees.find(e => e.user_id === user.id || e.work_email === user.email);
+    const userStatus = user.status || linkedEmp?.status || (user.is_active ? 'active' : 'inactive');
     setFormData({
       id: user.id,
       name: user.name,
       email: user.email,
       password: '',
       role: user.role,
-      is_active: user.is_active,
+      status: userStatus,
+      is_active: userStatus === 'active',
       employee_id: linkedEmp ? String(linkedEmp.id) : '',
     });
     setIsPanelOpen(true);
@@ -135,7 +139,8 @@ const UserManagement = () => {
         const payload = {
           name: formData.name,
           email: formData.email,
-          is_active: formData.is_active,
+          status: formData.status,
+          is_active: formData.status === 'active',
         };
         // If not editing self, include role
         if (currentUser?.id !== formData.id) {
@@ -143,9 +148,11 @@ const UserManagement = () => {
         }
 
         const updated = await updateUser(formData.id, payload);
-        setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
-        setSelectedUser(updated);
+        const mergedUser = { ...updated, status: formData.status, is_active: formData.status === 'active' };
+        setUsers(prev => prev.map(u => u.id === updated.id ? mergedUser : u));
+        setSelectedUser(mergedUser);
         showNotice('success', `User "${updated.name}" updated successfully.`);
+        fetchData();
       } else {
         // Create User
         const payload = {
@@ -153,13 +160,15 @@ const UserManagement = () => {
           email: formData.email,
           password: formData.password || 'Password123!',
           role: formData.role,
-          is_active: formData.is_active,
+          status: formData.status,
+          is_active: formData.status === 'active',
         };
         const createdResponse = await registerUser(payload);
-        const newUser = createdResponse.user;
+        const newUser = { ...createdResponse.user, status: formData.status, is_active: formData.status === 'active' };
         setUsers(prev => [...prev, newUser]);
         setSelectedUser(newUser);
         showNotice('success', `User "${newUser.name}" created successfully.`);
+        fetchData();
       }
       setIsPanelOpen(false);
     } catch (err) {
@@ -348,7 +357,12 @@ const UserManagement = () => {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        {u.is_active ? (
+                        {u.status === 'archived' ? (
+                          <span className="status-pill status-pill-warning" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
+                            <span className="status-dot" style={{ background: '#f59e0b' }} />
+                            Archived
+                          </span>
+                        ) : u.is_active && u.status !== 'inactive' ? (
                           <span className="status-pill status-pill-success">
                             <span className="status-dot" />
                             Active
@@ -515,26 +529,36 @@ const UserManagement = () => {
                 </div>
               </div>
 
-              {/* Account Status Toggle Pill */}
+              {/* Account Status Selection: Active, Inactive, Archive */}
               <div className="form-group">
                 <label className="form-label">Account Status</label>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
                   <button
                     type="button"
-                    className={`btn ${formData.is_active ? 'btn-success-soft' : 'btn-outline'}`}
-                    onClick={() => setFormData({ ...formData, is_active: true })}
+                    className={`btn ${formData.status === 'active' ? 'btn-success-soft' : 'btn-outline'}`}
+                    onClick={() => setFormData({ ...formData, status: 'active', is_active: true })}
                   >
                     <Check size={14} style={{ marginRight: '6px' }} />
-                    Active Account
+                    Active
                   </button>
                   <button
                     type="button"
-                    className={`btn ${!formData.is_active ? 'btn-danger-soft' : 'btn-outline'}`}
-                    onClick={() => setFormData({ ...formData, is_active: false })}
+                    className={`btn ${formData.status === 'inactive' ? 'btn-danger-soft' : 'btn-outline'}`}
+                    onClick={() => setFormData({ ...formData, status: 'inactive', is_active: false })}
                     disabled={isEditingSelf}
                     title={isEditingSelf ? "You cannot deactivate your own account" : ""}
                   >
                     Inactive
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${formData.status === 'archived' ? 'btn-warning-soft' : 'btn-outline'}`}
+                    style={formData.status === 'archived' ? { background: '#fef3c7', color: '#92400e', borderColor: '#fde68a' } : {}}
+                    onClick={() => setFormData({ ...formData, status: 'archived', is_active: false })}
+                    disabled={isEditingSelf}
+                    title={isEditingSelf ? "You cannot archive your own account" : ""}
+                  >
+                    Archive
                   </button>
                 </div>
               </div>

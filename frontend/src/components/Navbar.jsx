@@ -310,19 +310,7 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
               </div>
             )}
 
-            {/* 6. Admin Only - User Management Link */}
-            {isAdmin(user) && (
-              <div className={`navbar-item ${active === 'admin' ? 'is-active' : ''}`}>
-                <NavLink
-                  to="/admin/users"
-                  className="navbar-tab-button"
-                  onClick={() => setOpenDropdown(null)}
-                >
-                  <ShieldCheck size={14} style={{ marginRight: '5px', color: 'var(--sky)' }} />
-                  <span>Users</span>
-                </NavLink>
-              </div>
-            )}
+
           </nav>
         </div>
 

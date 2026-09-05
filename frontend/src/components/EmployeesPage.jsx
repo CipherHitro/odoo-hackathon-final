@@ -89,6 +89,7 @@ const EmployeesPage = () => {
   };
 
   const filteredEmployees = employees.filter((emp) => {
+    if ((emp.status || '').toLowerCase() === 'archived') return false;
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     const deptName = getDeptName(emp.department_id, emp.department_name);

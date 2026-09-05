@@ -3,20 +3,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import List
 
-from app.models.employee import Employee
+from app.models.employee import Employee, EmployeeStatus
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate
 
 class EmployeeRepository:
 
     @staticmethod
-    async def get_all(db: AsyncSession) -> List[Employee]:
-        result = await db.execute(
-            select(Employee).options(
-                selectinload(Employee.contracts),
-                selectinload(Employee.attendance_records),
-                selectinload(Employee.time_off_requests),
-            )
+    async def get_all(db: AsyncSession, include_archived: bool = False) -> List[Employee]:
+        query = select(Employee).options(
+            selectinload(Employee.contracts),
+            selectinload(Employee.attendance_records),
+            selectinload(Employee.time_off_requests),
         )
+        if not include_archived:
+            query = query.where(Employee.status != EmployeeStatus.ARCHIVED.value)
+        result = await db.execute(query)
         return list(result.scalars().all())
 
     @staticmethod
@@ -125,6 +126,15 @@ class EmployeeRepository:
                 await db.flush()
                 db_employee.user_id = new_user.id
             
+        # Also synchronize is_active with linked user if status was updated
+        if "status" in update_data and db_employee.user_id:
+            user_result = await db.execute(select(User).where(User.id == db_employee.user_id))
+            linked_user = user_result.scalar_one_or_none()
+            if linked_user:
+                status_str = db_employee.status.value if hasattr(db_employee.status, "value") else str(db_employee.status)
+                linked_user.is_active = (status_str == EmployeeStatus.ACTIVE.value)
+                db.add(linked_user)
+
         await db.commit()
         await db.refresh(db_employee)
         return db_employee

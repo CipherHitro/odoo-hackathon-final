@@ -6,6 +6,7 @@ from app.api.deps import get_current_user, require_roles
 from app.api.employees.controller import EmployeeController
 from app.api.employees.service import EmployeeService
 from app.core.database import get_db
+from app.models.employee import EmployeeStatus
 from app.models.user import User, UserRole
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeResponse
 
@@ -17,15 +18,18 @@ HR_ROLES = tuple(role.value for role in UserRole if role != UserRole.EMPLOYEE)
 
 @router.get("/", response_model=List[EmployeeResponse])
 async def get_employees(
+    include_archived: bool = False,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List employees. Regular employees only see their own profile, while HR/Admin can view all."""
     if current_user.role == UserRole.EMPLOYEE.value:
         emp = await EmployeeService.get_by_user_id(db, current_user.id)
+        if emp and not include_archived and emp.status == EmployeeStatus.ARCHIVED.value:
+            return []
         return [EmployeeController._to_response(emp)] if emp else []
 
-    return await EmployeeController.get_all(db)
+    return await EmployeeController.get_all(db, include_archived=include_archived)
 
 
 @router.get("/me", response_model=EmployeeResponse)

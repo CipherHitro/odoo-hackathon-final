@@ -8,8 +8,8 @@ from app.schemas.employee import EmployeeCreate, EmployeeUpdate
 class EmployeeService:
 
     @staticmethod
-    async def get_all(db: AsyncSession) -> List[Employee]:
-        return await EmployeeRepository.get_all(db)
+    async def get_all(db: AsyncSession, include_archived: bool = False) -> List[Employee]:
+        return await EmployeeRepository.get_all(db, include_archived=include_archived)
 
     @staticmethod
     async def get_by_id(db: AsyncSession, employee_id: int) -> Employee | None:
