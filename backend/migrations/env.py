@@ -10,6 +10,13 @@ from alembic import context
 from app.core.database import Base
 from app.core.config import settings
 from app.models.user import User
+from app.models.department import Department
+from app.models.working_schedule import WorkingSchedule, ScheduleLine
+from app.models.employee import Employee
+from app.models.contract import Contract
+from app.models.attendance import AttendanceRecord
+from app.models.time_off import TimeOffType, TimeOffAllocation, TimeOffRequest
+from app.models.payroll import SalaryStructure, SalaryRule, Payrun, Payslip, PayslipLine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
