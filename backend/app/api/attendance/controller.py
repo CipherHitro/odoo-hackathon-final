@@ -3,10 +3,10 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.attendance.service import (
+from app.api.attendance.service import AttendanceService
+from app.core.exceptions import (
     AlreadyCheckedInError,
     AttendanceRecordNotFoundError,
-    AttendanceService,
     EmployeeNotFoundError,
     InvalidTimeRangeError,
     NotCheckedInError,

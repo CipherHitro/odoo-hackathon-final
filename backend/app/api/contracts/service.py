@@ -3,21 +3,13 @@ from typing import List, Tuple
 
 from app.api.contracts.repository import ContractRepository
 from app.api.employees.repository import EmployeeRepository
-from app.core.exceptions import AppError
+from app.core.exceptions import (
+    ContractNotFoundError,
+    EmployeeNotFoundError,
+    InvalidDateRangeError,
+)
 from app.models.contract import Contract
 from app.schemas.contract import ContractCreate, ContractUpdate
-
-
-class ContractNotFoundError(AppError):
-    """Raised when a contract is not found."""
-
-
-class EmployeeNotFoundError(AppError):
-    """Raised when the specified employee does not exist."""
-
-
-class InvalidDateRangeError(AppError):
-    """Raised when contract end_date is earlier than start_date."""
 
 
 class ContractService:

@@ -2,9 +2,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from app.api.contracts.service import (
+from app.api.contracts.service import ContractService
+from app.core.exceptions import (
     ContractNotFoundError,
-    ContractService,
     EmployeeNotFoundError,
     InvalidDateRangeError,
 )

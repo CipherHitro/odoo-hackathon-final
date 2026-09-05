@@ -5,7 +5,13 @@ from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.attendance.repository import AttendanceRepository
-from app.core.exceptions import AppError
+from app.core.exceptions import (
+    AlreadyCheckedInError,
+    AttendanceRecordNotFoundError,
+    EmployeeNotFoundError,
+    InvalidTimeRangeError,
+    NotCheckedInError,
+)
 from app.models.attendance import AttendanceRecord
 from app.models.employee import Employee
 from app.models.user import User, UserRole
@@ -18,26 +24,6 @@ from app.schemas.attendance import (
     CheckInResponse,
     CheckOutResponse,
 )
-
-
-class AlreadyCheckedInError(AppError):
-    """Raised when an employee tries to check in while an active check-in session already exists."""
-
-
-class NotCheckedInError(AppError):
-    """Raised when an employee tries to check out without an active check-in session."""
-
-
-class AttendanceRecordNotFoundError(AppError):
-    """Raised when an attendance record is not found."""
-
-
-class EmployeeNotFoundError(AppError):
-    """Raised when the specified employee does not exist."""
-
-
-class InvalidTimeRangeError(AppError):
-    """Raised when check_out is earlier than check_in."""
 
 
 STANDARD_WORK_HOURS_PER_DAY = 8.0

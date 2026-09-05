@@ -6,7 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.employees.repository import EmployeeRepository
 from app.api.time_off.repository import TimeOffRepository
-from app.core.exceptions import AppError
+from app.core.exceptions import (
+    AllocationNotFoundError,
+    EmployeeProfileNotFoundError,
+    InsufficientBalanceError,
+    InvalidDateRangeError,
+    InvalidStatusTransitionError,
+    RequestNotFoundError,
+    TimeOffTypeAlreadyExistsError,
+    TimeOffTypeNotFoundError,
+)
 from app.models.employee import Employee
 from app.models.time_off import TimeOffAllocation, TimeOffRequest, TimeOffType
 from app.models.user import User, UserRole
@@ -23,38 +32,6 @@ from app.schemas.time_off import (
     TimeOffTypeResponse,
     TimeOffTypeUpdate,
 )
-
-
-class TimeOffTypeNotFoundError(AppError):
-    """Raised when a time off type is not found."""
-
-
-class TimeOffTypeAlreadyExistsError(AppError):
-    """Raised when creating a time off type with a duplicate name."""
-
-
-class AllocationNotFoundError(AppError):
-    """Raised when an allocation record is not found."""
-
-
-class RequestNotFoundError(AppError):
-    """Raised when a time off request is not found."""
-
-
-class InsufficientBalanceError(AppError):
-    """Raised when an employee lacks enough allocation balance for leave."""
-
-
-class InvalidDateRangeError(AppError):
-    """Raised when end_date is earlier than start_date."""
-
-
-class InvalidStatusTransitionError(AppError):
-    """Raised when an illegal status change is attempted."""
-
-
-class EmployeeProfileNotFoundError(AppError):
-    """Raised when no employee profile is associated with the user account."""
 
 
 def _type_to_response(type_obj: TimeOffType) -> TimeOffTypeResponse:

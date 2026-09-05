@@ -2,14 +2,14 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.time_off.service import (
+from app.api.time_off.service import TimeOffService
+from app.core.exceptions import (
     AllocationNotFoundError,
     EmployeeProfileNotFoundError,
     InsufficientBalanceError,
     InvalidDateRangeError,
     InvalidStatusTransitionError,
     RequestNotFoundError,
-    TimeOffService,
     TimeOffTypeAlreadyExistsError,
     TimeOffTypeNotFoundError,
 )
