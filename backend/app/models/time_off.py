@@ -1,3 +1,4 @@
+# Purpose: SQLAlchemy entity models for Leave Management (TimeOffType, TimeOffAllocation, TimeOffRequest).
 from datetime import date
 from sqlalchemy import String, ForeignKey, Integer, Float, Text, Date, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
