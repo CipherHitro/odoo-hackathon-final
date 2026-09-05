@@ -518,7 +518,7 @@ const WorkingSchedulesPage = () => {
                   }}
                 >
                   <ArrowLeft size={16} />
-                  <span>← Back to list</span>
+                  <span>Back to list</span>
                 </button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <h2 style={{

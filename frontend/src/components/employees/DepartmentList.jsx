@@ -198,10 +198,9 @@ const DepartmentList = () => {
             <table className="daybook-table">
               <thead>
                 <tr>
-                  <th style={{ width: '35%' }}>Department Name</th>
-                  <th style={{ width: '25%' }}>Department Lead / Manager</th>
-                  <th style={{ width: '20%' }}>Headcount</th>
-                  <th style={{ width: '20%', textAlign: 'right' }}>Color Swatch</th>
+                  <th style={{ width: '40%' }}>Department Name</th>
+                  <th style={{ width: '35%' }}>Department Lead / Manager</th>
+                  <th style={{ width: '25%', textAlign: 'right' }}>Headcount</th>
                 </tr>
               </thead>
               <tbody>
@@ -235,18 +234,10 @@ const DepartmentList = () => {
                       <td style={{ color: 'var(--text-secondary)' }}>
                         {managerName}
                       </td>
-                      <td>
+                      <td style={{ textAlign: 'right' }}>
                         <span className="role-pill" style={{ background: 'var(--muted)', color: 'var(--ink)' }}>
                           <Users size={12} style={{ marginRight: '4px', display: 'inline' }} />
                           {count} {count === 1 ? 'employee' : 'employees'}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span 
-                          className="status-pill"
-                          style={{ borderColor: color, color: color, background: 'transparent' }}
-                        >
-                          Token Swatch
                         </span>
                       </td>
                     </tr>

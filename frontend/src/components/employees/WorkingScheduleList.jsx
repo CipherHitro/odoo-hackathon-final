@@ -5,12 +5,16 @@ import {
   Calendar, 
   List as ListIcon, 
   ArrowLeft, 
-  Filter, 
   SlidersHorizontal,
   X,
   Trash2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  Coffee,
+  Briefcase,
+  Globe,
+  Edit2
 } from 'lucide-react';
 import AppLayout from '../AppLayout';
 import { 
@@ -21,6 +25,16 @@ import {
 } from '../../api/employees';
 import { getCurrentUser } from '../../api/auth';
 import { canManageEmployees } from '../../utils/rbac';
+
+const DAYS_OF_WEEK = [
+  { key: 'monday', label: 'Monday', short: 'Mon' },
+  { key: 'tuesday', label: 'Tuesday', short: 'Tue' },
+  { key: 'wednesday', label: 'Wednesday', short: 'Wed' },
+  { key: 'thursday', label: 'Thursday', short: 'Thu' },
+  { key: 'friday', label: 'Friday', short: 'Fri' },
+  { key: 'saturday', label: 'Saturday', short: 'Sat' },
+  { key: 'sunday', label: 'Sunday', short: 'Sun' },
+];
 
 const DEFAULT_DAYS = [
   { day_of_week: 'monday', work_from: '09:00', work_to: '17:00', break_hours: 1.0 },
@@ -36,7 +50,6 @@ const WorkingScheduleList = () => {
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState('list'); // 'list' | 'calendar'
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedScheduleId, setSelectedScheduleId] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -62,9 +75,6 @@ const WorkingScheduleList = () => {
       ]);
       setSchedules(data || []);
       setCurrentUser(me);
-      if (data && data.length > 0 && !selectedScheduleId) {
-        setSelectedScheduleId(data[0].id);
-      }
     } catch (err) {
       console.error('Error fetching schedules', err);
       showNotice('error', err.message || 'Failed to load schedules');
@@ -82,6 +92,32 @@ const WorkingScheduleList = () => {
     setTimeout(() => setNotification(null), 3500);
   };
 
+  const [selectedCalendarScheduleId, setSelectedCalendarScheduleId] = useState(null);
+
+  const formatTime12h = (timeStr) => {
+    if (!timeStr) return '';
+    const [hStr, mStr] = timeStr.split(':');
+    let h = parseInt(hStr, 10);
+    const m = mStr || '00';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  };
+
+  const getTimelineStyle = (start, end) => {
+    if (!start || !end) return { left: '0%', width: '0%' };
+    const [h1, m1] = start.split(':').map(Number);
+    const [h2, m2] = end.split(':').map(Number);
+    const startMins = h1 * 60 + m1;
+    const endMins = h2 * 60 + m2;
+    const dayStart = 360; // 06:00
+    const dayTotal = 960; // 16 hrs (until 22:00)
+    const left = Math.max(0, Math.min(100, ((startMins - dayStart) / dayTotal) * 100));
+    const right = Math.max(0, Math.min(100, ((endMins - dayStart) / dayTotal) * 100));
+    const width = Math.max(8, right - left);
+    return { left: `${left}%`, width: `${width}%` };
+  };
+
   const handleOpenCreate = () => {
     setFormData({
       id: null,
@@ -97,9 +133,9 @@ const WorkingScheduleList = () => {
   };
 
   const handleOpenEdit = async (schedule) => {
-    setSelectedScheduleId(schedule.id);
     try {
       const detailed = await getWorkingScheduleById(schedule.id);
+      const rawLines = detailed.schedule_lines || detailed.lines || [];
       setFormData({
         id: detailed.id,
         name: detailed.name,
@@ -108,19 +144,34 @@ const WorkingScheduleList = () => {
         hours_per_week: detailed.hours_per_week || 40.0,
         timezone: detailed.timezone || 'America/Los_Angeles',
         is_active: detailed.is_active !== false,
-        lines: detailed.lines && detailed.lines.length > 0 ? detailed.lines : [...DEFAULT_DAYS],
+        lines: rawLines.length > 0 
+          ? rawLines.map(l => ({
+              day_of_week: (l.day_of_week || 'monday').toLowerCase(),
+              work_from: l.start_time || l.work_from || '09:00',
+              work_to: l.end_time || l.work_to || '17:00',
+              break_hours: l.break_hours ?? 1.0,
+            }))
+          : [...DEFAULT_DAYS],
       });
       setIsFormOpen(true);
     } catch (err) {
+      const rawLines = schedule.schedule_lines || schedule.lines || [];
       setFormData({
         id: schedule.id,
         name: schedule.name,
         company: schedule.company || 'My Company (San Francisco)',
         days_per_week: schedule.days_per_week || 5,
         hours_per_week: schedule.hours_per_week || 40.0,
-        timezone: 'America/Los_Angeles',
+        timezone: schedule.timezone || 'America/Los_Angeles',
         is_active: schedule.is_active !== false,
-        lines: [...DEFAULT_DAYS],
+        lines: rawLines.length > 0 
+          ? rawLines.map(l => ({
+              day_of_week: (l.day_of_week || 'monday').toLowerCase(),
+              work_from: l.start_time || l.work_from || '09:00',
+              work_to: l.end_time || l.work_to || '17:00',
+              break_hours: l.break_hours ?? 1.0,
+            }))
+          : [...DEFAULT_DAYS],
       });
       setIsFormOpen(true);
     }
@@ -228,7 +279,7 @@ const WorkingScheduleList = () => {
                 onClick={() => setIsFormOpen(false)}
               >
                 <ArrowLeft size={14} style={{ marginRight: '6px' }} />
-                ← Back to list
+                Back to list
               </button>
               <h2 className="font-display" style={{ fontSize: '18px', margin: 0 }}>
                 {formData.id ? formData.name : 'New Working Schedule'}
@@ -318,7 +369,7 @@ const WorkingScheduleList = () => {
                       onClick={handleAddDay}
                     >
                       <Plus size={14} style={{ marginRight: '4px' }} />
-                      + Add Day
+                      Add Day
                     </button>
                   </div>
 
@@ -487,11 +538,6 @@ const WorkingScheduleList = () => {
               </div>
 
               <button type="button" className="btn btn-outline btn-sm">
-                <Filter size={13} style={{ marginRight: '4px' }} />
-                Filter
-              </button>
-
-              <button type="button" className="btn btn-outline btn-sm">
                 <SlidersHorizontal size={13} style={{ marginRight: '4px' }} />
                 Columns
               </button>
@@ -501,68 +547,320 @@ const WorkingScheduleList = () => {
               </div>
             </div>
 
-            {/* Schedule Table with 3px coral left border on selected row per 01-employees.md §5 */}
-            <div className="card table-card" style={{ marginTop: '16px', overflow: 'hidden' }}>
-              {loading ? (
-                <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                  Loading working schedules...
-                </div>
-              ) : filteredSchedules.length === 0 ? (
-                <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                  No working schedules found.
-                </div>
-              ) : (
-                <table className="daybook-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '35%' }}>Schedule Name</th>
-                      <th style={{ width: '15%' }}>Days / Week</th>
-                      <th style={{ width: '15%' }}>Hours / Week</th>
-                      <th style={{ width: '25%' }}>Company</th>
-                      <th style={{ width: '10%', textAlign: 'right' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredSchedules.map((sch) => {
-                      const isSelected = selectedScheduleId === sch.id;
-                      const isActive = sch.is_active !== false;
+            {/* Content: List Table OR Calendar View */}
+            {activeSubTab === 'list' ? (
+              <div className="card table-card" style={{ marginTop: '16px', overflow: 'hidden' }}>
+                {loading ? (
+                  <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    Loading working schedules...
+                  </div>
+                ) : filteredSchedules.length === 0 ? (
+                  <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    No working schedules found.
+                  </div>
+                ) : (
+                  <table className="daybook-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '35%' }}>Schedule Name</th>
+                        <th style={{ width: '15%' }}>Days / Week</th>
+                        <th style={{ width: '15%' }}>Hours / Week</th>
+                        <th style={{ width: '25%' }}>Company</th>
+                        <th style={{ width: '10%', textAlign: 'right' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSchedules.map((sch) => {
+                        const isActive = sch.is_active !== false;
 
-                      return (
-                        <tr
-                          key={sch.id}
-                          onClick={() => {
-                            setSelectedScheduleId(sch.id);
-                            handleOpenEdit(sch);
-                          }}
-                          className={`cursor-pointer ${isSelected ? 'row-selected' : ''}`}
-                        >
-                          <td>
-                            <span style={{ fontWeight: '600', color: 'var(--ink)' }}>
-                              {sch.name}
-                            </span>
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                            {sch.days_per_week || 5} days
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                            {sch.hours_per_week || 40} hrs
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)' }}>
-                            {sch.company || 'My Company (San Francisco)'}
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <span className={`status-pill ${isActive ? 'status-pill-success' : 'status-pill-danger'}`}>
-                              <span className="status-dot" />
-                              {isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                        return (
+                          <tr
+                            key={sch.id}
+                            onClick={() => {
+                              handleOpenEdit(sch);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <td>
+                              <span style={{ fontWeight: '600', color: 'var(--ink)' }}>
+                                {sch.name}
+                              </span>
+                            </td>
+                            <td style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                              {sch.days_per_week || 5} days
+                            </td>
+                            <td style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                              {sch.hours_per_week || 40} hrs
+                            </td>
+                            <td style={{ color: 'var(--text-secondary)' }}>
+                              {sch.company || 'My Company (San Francisco)'}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <span className={`status-pill ${isActive ? 'status-pill-success' : 'status-pill-danger'}`}>
+                                <span className="status-dot" />
+                                {isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            ) : (
+              /* Calendar View */
+              (() => {
+                const activeCalendarSchedule = schedules.find(s => s.id === selectedCalendarScheduleId) || filteredSchedules[0] || schedules[0] || null;
+
+                return (
+                  <div className="schedule-calendar-container">
+                    {/* Schedule Selector & Overview Header */}
+                    <div className="schedule-calendar-header-card">
+                      <div className="schedule-selector-row">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Schedule:
+                          </span>
+                          <div className="schedule-chips-group">
+                            {schedules.map(sch => {
+                              const isActive = (selectedCalendarScheduleId === sch.id) || (!selectedCalendarScheduleId && sch.id === activeCalendarSchedule?.id);
+                              return (
+                                <button
+                                  key={sch.id}
+                                  type="button"
+                                  className={`schedule-chip ${isActive ? 'is-active' : ''}`}
+                                  onClick={() => setSelectedCalendarScheduleId(sch.id)}
+                                >
+                                  <Calendar size={13} />
+                                  <span>{sch.name}</span>
+                                  <span style={{ fontSize: '0.72rem', opacity: 0.8, marginLeft: '2px' }}>
+                                    ({sch.hours_per_week || 40}h)
+                                  </span>
+                                </button>
+                              );
+                            })}
+                            <button
+                              type="button"
+                              className={`schedule-chip ${selectedCalendarScheduleId === 'all' ? 'is-active' : ''}`}
+                              onClick={() => setSelectedCalendarScheduleId('all')}
+                            >
+                              <SlidersHorizontal size={13} />
+                              <span>Compare All</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {activeCalendarSchedule && canEdit && selectedCalendarScheduleId !== 'all' && (
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={() => handleOpenEdit(activeCalendarSchedule)}
+                          >
+                            <Edit2 size={13} style={{ marginRight: '6px' }} />
+                            Edit Schedule
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Stats row for the active schedule */}
+                      {selectedCalendarScheduleId !== 'all' && activeCalendarSchedule && (
+                        <div className="schedule-stats-grid">
+                          <div className="schedule-stat-chip">
+                            <div className="schedule-stat-icon-wrap">
+                              <Clock size={18} />
+                            </div>
+                            <div>
+                              <div className="schedule-stat-label">Weekly Hours</div>
+                              <div className="schedule-stat-value">{activeCalendarSchedule.hours_per_week || 40} hrs / week</div>
+                            </div>
+                          </div>
+
+                          <div className="schedule-stat-chip">
+                            <div className="schedule-stat-icon-wrap">
+                              <Calendar size={18} />
+                            </div>
+                            <div>
+                              <div className="schedule-stat-label">Working Days</div>
+                              <div className="schedule-stat-value">{activeCalendarSchedule.days_per_week || 5} days / week</div>
+                            </div>
+                          </div>
+
+                          <div className="schedule-stat-chip">
+                            <div className="schedule-stat-icon-wrap">
+                              <Briefcase size={18} />
+                            </div>
+                            <div>
+                              <div className="schedule-stat-label">Average / Day</div>
+                              <div className="schedule-stat-value">
+                                {(Number(activeCalendarSchedule.hours_per_week || 40) / (activeCalendarSchedule.days_per_week || 5)).toFixed(1)} hrs / day
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="schedule-stat-chip">
+                            <div className="schedule-stat-icon-wrap">
+                              <Globe size={18} />
+                            </div>
+                            <div>
+                              <div className="schedule-stat-label">Timezone</div>
+                              <div className="schedule-stat-value" style={{ fontSize: '0.82rem' }}>
+                                {activeCalendarSchedule.timezone || 'Asia/Kolkata'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Calendar Content: Single Schedule 7-Day Grid OR Compare All Matrix */}
+                    {selectedCalendarScheduleId === 'all' ? (
+                      /* Comparison Matrix of All Schedules */
+                      <div className="card table-card" style={{ overflow: 'hidden' }}>
+                        <table className="daybook-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: '25%' }}>Schedule Name</th>
+                              <th style={{ width: '10%' }}>Weekly</th>
+                              {DAYS_OF_WEEK.map(d => (
+                                <th key={d.key} style={{ textAlign: 'center', width: '9%' }}>{d.short}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {schedules.map(sch => {
+                              const lines = sch.schedule_lines || sch.lines || [];
+                              return (
+                                <tr 
+                                  key={sch.id}
+                                  className="cursor-pointer"
+                                  onClick={() => handleOpenEdit(sch)}
+                                  title="Click to edit schedule"
+                                >
+                                  <td>
+                                    <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{sch.name}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{sch.company}</div>
+                                  </td>
+                                  <td>
+                                    <span style={{ fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>
+                                      {sch.hours_per_week}h
+                                    </span>
+                                  </td>
+                                  {DAYS_OF_WEEK.map(d => {
+                                    const match = lines.find(l => (l.day_of_week || '').toLowerCase() === d.key);
+                                    if (match) {
+                                      const from = match.start_time || match.work_from || '09:00';
+                                      const to = match.end_time || match.work_to || '18:00';
+                                      return (
+                                        <td key={d.key} style={{ textAlign: 'center' }}>
+                                          <div style={{
+                                            display: 'inline-block',
+                                            padding: '4px 8px',
+                                            background: 'rgba(217, 56, 30, 0.08)',
+                                            color: 'var(--coral)',
+                                            borderRadius: 'var(--r-sm)',
+                                            fontSize: '0.72rem',
+                                            fontWeight: 600,
+                                            fontFamily: 'var(--font-mono)'
+                                          }}>
+                                            {from}–{to}
+                                          </div>
+                                        </td>
+                                      );
+                                    }
+                                    return (
+                                      <td key={d.key} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                        —
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      /* 7-Day Weekly Shift Grid */
+                      activeCalendarSchedule ? (
+                        <div className="schedule-week-grid">
+                          {DAYS_OF_WEEK.map(day => {
+                            const lines = activeCalendarSchedule.schedule_lines || activeCalendarSchedule.lines || [];
+                            const dayLine = lines.find(l => (l.day_of_week || '').toLowerCase() === day.key);
+                            const isWorkDay = Boolean(dayLine);
+                            const workFrom = dayLine ? (dayLine.start_time || dayLine.work_from || '09:00') : null;
+                            const workTo = dayLine ? (dayLine.end_time || dayLine.work_to || '18:00') : null;
+                            const breakHrs = dayLine ? (dayLine.break_hours ?? 1.0) : 0;
+                            const workHrs = dayLine ? (dayLine.work_hours ?? calculateHours(workFrom, workTo, breakHrs)) : 0;
+                            const timelineStyle = isWorkDay ? getTimelineStyle(workFrom, workTo) : null;
+
+                            return (
+                              <div key={day.key} className="schedule-day-column">
+                                <div className="schedule-day-header">
+                                  <span className="schedule-day-name">{day.label}</span>
+                                  <span className={`status-pill ${isWorkDay ? 'status-pill-success' : 'status-pill-neutral'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+                                    <span className="status-dot" />
+                                    <span>{isWorkDay ? 'Work Day' : 'Off'}</span>
+                                  </span>
+                                </div>
+
+                                <div className="schedule-day-body">
+                                  {isWorkDay ? (
+                                    <div 
+                                      className="schedule-shift-card"
+                                      onClick={() => handleOpenEdit(activeCalendarSchedule)}
+                                      title="Click to edit shift"
+                                    >
+                                      <div className="schedule-shift-time">
+                                        <Clock size={13} style={{ color: 'var(--coral)' }} />
+                                        <span>{formatTime12h(workFrom)} – {formatTime12h(workTo)}</span>
+                                      </div>
+
+                                      <div className="schedule-shift-meta">
+                                        <span>Working: <strong>{workHrs}h</strong></span>
+                                        {breakHrs > 0 && <span>Break: {breakHrs}h</span>}
+                                      </div>
+
+                                      {/* Mini Day Timeline bar */}
+                                      <div className="schedule-timeline-bar" title={`Shift span: ${workFrom} to ${workTo}`}>
+                                        <div 
+                                          className="schedule-timeline-fill" 
+                                          style={timelineStyle}
+                                        />
+                                      </div>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                        <span>6 AM</span>
+                                        <span>12 PM</span>
+                                        <span>6 PM</span>
+                                        <span>10 PM</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="schedule-off-card">
+                                      <Coffee size={22} style={{ opacity: 0.6 }} />
+                                      <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        Rest Day
+                                      </div>
+                                      <div style={{ fontSize: '0.72rem' }}>
+                                        No scheduled hours
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="card" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                          No working schedules available to display.
+                        </div>
+                      )
+                    )}
+                  </div>
+                );
+              })()
+            )}
           </>
         )}
       </div>
