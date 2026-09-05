@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  Search, 
-  Clock, 
-  Layers, 
-  Calendar, 
-  CheckCircle2, 
-  AlertCircle, 
-  X, 
-  Check, 
+import {
+  Plus,
+  Search,
+  Clock,
+  Layers,
+  Calendar,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  Check,
   Info,
   ArrowRight
 } from 'lucide-react';
 import AppLayout from './AppLayout';
 import { getCurrentUser } from '../api/auth';
-import { 
-  getTimeOffTypes, 
+import {
+  getTimeOffTypes,
   createTimeOffType,
-  getAllocations, 
+  getAllocations,
   createAllocation,
   approveAllocation,
   refuseAllocation,
-  getTimeOffRequests, 
+  getTimeOffRequests,
   createTimeOffRequest,
   approveTimeOffRequest,
   refuseTimeOffRequest
@@ -152,10 +152,10 @@ const TimeOffPage = () => {
         setRequestForm(prev => ({ ...prev, time_off_type_id: typesData[0].id }));
       }
       if (typesData.length > 0 && empsData.length > 0 && !allocForm.employee_id) {
-        setAllocForm(prev => ({ 
-          ...prev, 
-          employee_id: empsData[0].id, 
-          time_off_type_id: typesData[0].id 
+        setAllocForm(prev => ({
+          ...prev,
+          employee_id: empsData[0].id,
+          time_off_type_id: typesData[0].id
         }));
       }
     } catch (err) {
@@ -419,8 +419,8 @@ const TimeOffPage = () => {
           <div>
             <h1 className="page-title font-display">Time Off & Leaves</h1>
             <p className="page-subtitle">
-              {isAdminOrHr 
-                ? 'Manage employee leave requests, policy allocations, and leave types.' 
+              {isAdminOrHr
+                ? 'Manage employee leave requests, policy allocations, and leave types.'
                 : 'View your leave balances and submit time off requests.'}
             </p>
           </div>
@@ -571,10 +571,10 @@ const TimeOffPage = () => {
             <input
               type="text"
               placeholder={
-                activeTab === 'requests' 
-                  ? 'Search by employee or reason...' 
-                  : activeTab === 'allocations' 
-                    ? 'Search by employee or allocation...' 
+                activeTab === 'requests'
+                  ? 'Search by employee or reason...'
+                  : activeTab === 'allocations'
+                    ? 'Search by employee or allocation...'
                     : 'Search leave types...'
               }
               value={searchQuery}
@@ -943,8 +943,8 @@ const TimeOffPage = () => {
           <div className="daybook-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="daybook-modal-header">
               <h2 className="daybook-modal-title">Request Time Off</h2>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="daybook-modal-close"
                 onClick={() => setIsRequestModalOpen(false)}
               >
@@ -1060,8 +1060,8 @@ const TimeOffPage = () => {
           <div className="daybook-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="daybook-modal-header">
               <h2 className="daybook-modal-title">Allocate Leave to Employee</h2>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="daybook-modal-close"
                 onClick={() => setIsAllocModalOpen(false)}
               >
@@ -1180,8 +1180,8 @@ const TimeOffPage = () => {
           <div className="daybook-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="daybook-modal-header">
               <h2 className="daybook-modal-title">Create Leave Type</h2>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="daybook-modal-close"
                 onClick={() => setIsTypeModalOpen(false)}
               >
