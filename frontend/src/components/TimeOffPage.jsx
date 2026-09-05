@@ -397,7 +397,7 @@ const TimeOffPage = () => {
             </p>
           </div>
 
-          <div className="page-actions-group">
+          <div className="page-actions-group" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               type="button"
               className="btn-coral"
