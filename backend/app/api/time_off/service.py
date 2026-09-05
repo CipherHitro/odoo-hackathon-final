@@ -2,7 +2,9 @@
 from datetime import date
 from typing import Sequence
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.api.employees.repository import EmployeeRepository
 from app.api.time_off.repository import TimeOffRepository
@@ -147,13 +149,40 @@ class TimeOffService:
         if not type_obj:
             raise TimeOffTypeNotFoundError(f"Time off type #{data.time_off_type_id} not found")
 
+        # Check if an existing allocation already exists for this employee and leave type
+        result = await db.execute(
+            select(TimeOffAllocation)
+            .options(
+                joinedload(TimeOffAllocation.employee),
+                joinedload(TimeOffAllocation.time_off_type),
+            )
+            .where(
+                TimeOffAllocation.employee_id == data.employee_id,
+                TimeOffAllocation.time_off_type_id == data.time_off_type_id,
+            )
+            .order_by(TimeOffAllocation.id.asc())
+        )
+        existing_allocations = list(result.scalars().all())
+
+        if existing_allocations:
+            # Add on to existing allocation!
+            primary = existing_allocations[0]
+            primary.allocated_days += data.allocated_days
+            primary.status = "approved"
+            if data.validity_label:
+                primary.validity_label = data.validity_label
+            if data.description:
+                primary.description = f"{primary.description or ''} | {data.description}".strip(" |")
+            await TimeOffRepository.save_allocation(db, primary)
+            return _allocation_to_response(primary)
+
         allocation = await TimeOffRepository.create_allocation(
             db,
             employee_id=data.employee_id,
             time_off_type_id=data.time_off_type_id,
             allocated_days=data.allocated_days,
             taken_days=0.0,
-            status="to_approve",
+            status="approved",
             validity_label=data.validity_label,
             description=data.description,
         )
