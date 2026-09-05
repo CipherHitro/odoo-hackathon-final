@@ -1,0 +1,59 @@
+| Module / Feature          |   Employee  |     HR Manager     |   HR Payroll User  | HR Payroll Manager |        Admin       |
+| ------------------------- | :---------: | :----------------: | :----------------: | :----------------: | :----------------: |
+| **Dashboard**             |     Own     |    HR Dashboard    |    Payroll + HR    |  Full Payroll + HR |        Full        |
+| **Employees**             |   👁️ Own   |      **CRUD**      |      **CRUD**      |      **CRUD**      |      **CRUD**      |
+| View own profile          |      ✅      |          ✅         |          ✅         |          ✅         |          ✅         |
+| View other employees      |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Create employee           |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Edit employee             | Own limited |          ✅         |          ✅         |          ✅         |          ✅         |
+| Delete employee           |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| **Contracts**             |      ❌      |      **CRUD**      |      **CRUD**      |      **CRUD**      |      **CRUD**      |
+| View contracts            |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Create contract           |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Edit contract             |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Delete contract           |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| **Working Schedules**     |      ❌      |      **CRUD**      |      **CRUD**      |      **CRUD**      |      **CRUD**      |
+| View schedules            |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Create schedule           |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Edit schedule             |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Delete schedule           |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| **Attendance**            |     Own     |      **CRUD**      |      **CRUD**      |      **CRUD**      |      **CRUD**      |
+| View own attendance       |      ✅      |          —         |          —         |          —         |          —         |
+| Create check-in/out       |      ✅      |          —         |          —         |          —         |          —         |
+| View employee attendance  |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Manual correction         |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| **Time Off Requests**     |     Own     | **CRUD + Approve** | **CRUD + Approve** | **CRUD + Approve** | **CRUD + Approve** |
+| Create own request        |      ✅      |          ✅         |          ✅         |          ✅         |          ✅         |
+| View own requests         |      ✅      |          ✅         |          ✅         |          ✅         |          ✅         |
+| View employee requests    |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| Approve/refuse            |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| **Allocations**           | Own balance |      **CRUD**      |      **CRUD**      |      **CRUD**      |      **CRUD**      |
+| View own balance          |      ✅      |          —         |          —         |          —         |          —         |
+| Manage allocations        |      ❌      |          ✅         |          ✅         |          ✅         |          ✅         |
+| **Time Off Types**        |      ❌      |      **CRUD**      |      **CRUD**      |      **CRUD**      |      **CRUD**      |
+| **Payruns**               |      ❌      |          ❌         |     **Manage**     |    **Full CRUD**   |    **Full CRUD**   |
+| Create Payrun             |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| Compute                   |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| Validate                  |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| Mark Paid                 |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| View Payrun               |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| **Payslips**              |     Own     |          ❌         |     **Manage**     |    **Full CRUD**   |    **Full CRUD**   |
+| View own payslip          |      ✅*     |          ❌         |          —         |          —         |          —         |
+| View employee payslips    |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| Generate PDF              |     Own*    |          ❌         |          ✅         |          ✅         |          ✅         |
+| Send payslips             |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| **Salary Structures**     |      ❌      |          ❌         |  👁️ **Read-only** |      **CRUD**      |      **CRUD**      |
+| View                      |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| Create                    |      ❌      |          ❌         |          ❌         |          ✅         |          ✅         |
+| Edit                      |      ❌      |          ❌         |          ❌         |          ✅         |          ✅         |
+| Delete                    |      ❌      |          ❌         |          ❌         |          ✅         |          ✅         |
+| **Salary Rules**          |      ❌      |          ❌         |  👁️ **Read-only** |      **CRUD**      |      **CRUD**      |
+| View                      |      ❌      |          ❌         |          ✅         |          ✅         |          ✅         |
+| Create                    |      ❌      |          ❌         |          ❌         |          ✅         |          ✅         |
+| Edit                      |      ❌      |          ❌         |          ❌         |          ✅         |          ✅         |
+| Delete                    |      ❌      |          ❌         |          ❌         |          ✅         |          ✅         |
+| **Reports**               | Own/limited |         HR         |    HR + Payroll    |        Full        |        Full        |
+| **User Management**       |      ❌      |          ❌         |          ❌         |          ❌         |      **CRUD**      |
+| **Role Management**       |      ❌      |          ❌         |          ❌         |          ❌         |      **CRUD**      |
+| **Permission Management** |      ❌      |          ❌         |          ❌         |          ❌         |      **CRUD**      |
+| **System Settings**       |      ❌      |          ❌         |          ❌         |          ❌         |      **Full**      |

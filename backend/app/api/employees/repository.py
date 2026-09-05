@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from typing import List
 
 from app.models.employee import Employee
@@ -9,16 +10,27 @@ class EmployeeRepository:
 
     @staticmethod
     async def get_all(db: AsyncSession) -> List[Employee]:
-        result = await db.execute(select(Employee))
+        result = await db.execute(
+            select(Employee).options(selectinload(Employee.contracts))
+        )
         return list(result.scalars().all())
 
     @staticmethod
     async def get_by_id(db: AsyncSession, employee_id: int) -> Employee | None:
-        return await db.get(Employee, employee_id)
+        result = await db.execute(
+            select(Employee)
+            .where(Employee.id == employee_id)
+            .options(selectinload(Employee.contracts))
+        )
+        return result.scalar_one_or_none()
 
     @staticmethod
     async def get_by_user_id(db: AsyncSession, user_id: int) -> Employee | None:
-        result = await db.execute(select(Employee).where(Employee.user_id == user_id))
+        result = await db.execute(
+            select(Employee)
+            .where(Employee.user_id == user_id)
+            .options(selectinload(Employee.contracts))
+        )
         return result.scalar_one_or_none()
 
     @staticmethod

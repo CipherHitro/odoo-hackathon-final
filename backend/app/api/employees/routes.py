@@ -23,7 +23,7 @@ async def get_employees(
     """List employees. Regular employees only see their own profile, while HR/Admin can view all."""
     if current_user.role == UserRole.EMPLOYEE.value:
         emp = await EmployeeService.get_by_user_id(db, current_user.id)
-        return [EmployeeResponse.model_validate(emp)] if emp else []
+        return [EmployeeController._to_response(emp)] if emp else []
 
     return await EmployeeController.get_all(db)
 
@@ -40,7 +40,7 @@ async def get_my_employee_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Employee profile not found for this account",
         )
-    return EmployeeResponse.model_validate(emp)
+    return EmployeeController._to_response(emp)
 
 
 @router.post("/", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
@@ -73,7 +73,7 @@ async def get_employee(
             detail="You do not have permission to view other employee records",
         )
 
-    return EmployeeResponse.model_validate(emp)
+    return EmployeeController._to_response(emp)
 
 
 @router.patch("/{employee_id}", response_model=EmployeeResponse)
@@ -85,3 +85,15 @@ async def update_employee(
 ):
     """Update employee details (HR/Admin only)."""
     return await EmployeeController.update(db, employee_id, data)
+
+
+@router.get("/{employee_id}/contracts")
+async def get_employee_contracts(
+    employee_id: int,
+    current_user: User = Depends(require_roles(*HR_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve all contracts for a specific employee (HR/Admin only)."""
+    from app.api.contracts.controller import ContractController
+    return await ContractController.get_by_employee_id(db, employee_id)
+
