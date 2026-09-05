@@ -58,3 +58,25 @@ class WorkingScheduleRepository:
             .where(WorkingSchedule.id == db_schedule.id)
         )
         return result.scalar_one()
+
+    @staticmethod
+    async def delete(db: AsyncSession, db_schedule: WorkingSchedule) -> bool:
+        from app.models.employee import Employee
+        from app.models.contract import Contract
+        from sqlalchemy import update
+
+        # Safely nullify any foreign key references from employees and contracts
+        await db.execute(
+            update(Employee)
+            .where(Employee.working_schedule_id == db_schedule.id)
+            .values(working_schedule_id=None)
+        )
+        await db.execute(
+            update(Contract)
+            .where(Contract.working_schedule_id == db_schedule.id)
+            .values(working_schedule_id=None)
+        )
+
+        await db.delete(db_schedule)
+        await db.commit()
+        return True

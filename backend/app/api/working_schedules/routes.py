@@ -51,3 +51,14 @@ async def update_working_schedule(
 ):
     """Update working schedule (HR/Admin only)."""
     return await WorkingScheduleController.update(db, schedule_id, data)
+
+
+@router.delete("/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_working_schedule(
+    schedule_id: int,
+    current_user: User = Depends(require_roles(*HR_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete working schedule (HR/Admin only)."""
+    await WorkingScheduleController.delete(db, schedule_id)
+

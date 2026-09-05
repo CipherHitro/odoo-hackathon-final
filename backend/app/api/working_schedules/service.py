@@ -25,3 +25,11 @@ class WorkingScheduleService:
         if not db_schedule:
             return None
         return await WorkingScheduleRepository.update(db, db_schedule, data)
+
+    @staticmethod
+    async def delete(db: AsyncSession, schedule_id: int) -> bool:
+        db_schedule = await WorkingScheduleRepository.get_by_id(db, schedule_id)
+        if not db_schedule:
+            return False
+        return await WorkingScheduleRepository.delete(db, db_schedule)
+

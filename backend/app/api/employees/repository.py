@@ -11,7 +11,11 @@ class EmployeeRepository:
     @staticmethod
     async def get_all(db: AsyncSession) -> List[Employee]:
         result = await db.execute(
-            select(Employee).options(selectinload(Employee.contracts))
+            select(Employee).options(
+                selectinload(Employee.contracts),
+                selectinload(Employee.attendance_records),
+                selectinload(Employee.time_off_requests),
+            )
         )
         return list(result.scalars().all())
 
@@ -20,7 +24,11 @@ class EmployeeRepository:
         result = await db.execute(
             select(Employee)
             .where(Employee.id == employee_id)
-            .options(selectinload(Employee.contracts))
+            .options(
+                selectinload(Employee.contracts),
+                selectinload(Employee.attendance_records),
+                selectinload(Employee.time_off_requests),
+            )
         )
         return result.scalar_one_or_none()
 
@@ -29,7 +37,11 @@ class EmployeeRepository:
         result = await db.execute(
             select(Employee)
             .where(Employee.user_id == user_id)
-            .options(selectinload(Employee.contracts))
+            .options(
+                selectinload(Employee.contracts),
+                selectinload(Employee.attendance_records),
+                selectinload(Employee.time_off_requests),
+            )
         )
         return result.scalar_one_or_none()
 
