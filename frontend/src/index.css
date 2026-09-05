@@ -92,7 +92,7 @@ button {
    BUTTONS (00-foundations.md §5)
    ═══════════════════════════════════════════════ */
 
-.btn {
+.btn, .btn-primary, .btn-coral, .btn-outline, .btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -108,28 +108,30 @@ button {
   line-height: 1.25;
 }
 
-.btn:disabled {
+.btn:disabled, .btn-primary:disabled, .btn-coral:disabled, .btn-outline:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.btn-primary {
+.btn-primary, .btn-coral {
   background-color: var(--coral);
-  color: var(--text-inverse);
+  color: #ffffff;
+  border-color: var(--coral);
   box-shadow: 0 1px 2px rgba(241, 80, 42, 0.25);
 }
 
-.btn-primary:hover:not(:disabled) {
+.btn-primary:hover:not(:disabled), .btn-coral:hover:not(:disabled) {
   background-color: var(--coral-strong);
+  border-color: var(--coral-strong);
 }
 
-.btn-outline {
+.btn-outline, .btn-secondary {
   background-color: var(--card);
   color: var(--ink);
   border-color: var(--border);
 }
 
-.btn-outline:hover:not(:disabled) {
+.btn-outline:hover:not(:disabled), .btn-secondary:hover:not(:disabled) {
   background-color: var(--muted);
   border-color: #D3D5DA;
 }
@@ -715,6 +717,83 @@ select:disabled {
   border-radius: 4px;
   border: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+/* Page Toolbar Search & Filter Pills per 00-foundations.md & 03-attendance.md */
+.search-pill-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border-radius: var(--r-pill);
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--border);
+  transition: all 0.15s ease;
+}
+
+.search-pill-container:focus-within {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 2px rgba(241, 80, 42, 0.15);
+}
+
+.search-pill-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.search-pill-input {
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  color: var(--ink);
+  width: 100%;
+}
+
+.search-clear-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.search-clear-btn:hover {
+  color: var(--ink);
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--muted);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 0.45rem 0.95rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-ui);
+  outline: none;
+}
+
+.filter-pill:hover {
+  border-color: #D3D5DA;
+  color: var(--ink);
+}
+
+.filter-pill.is-active {
+  background: rgba(241, 80, 42, 0.08);
+  color: var(--coral);
+  border-color: var(--coral);
+  font-weight: 600;
 }
 
 .attendance-widget-wrapper {
@@ -1451,6 +1530,463 @@ select:disabled {
 }
 
 /* ═══════════════════════════════════════════════
+   ATTENDANCE (03-attendance.md)
+   ═══════════════════════════════════════════════ */
+.attendance-hero-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.attendance-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.attendance-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pulse-dot-live {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  display: inline-block;
+  animation: pulse-dot-anim 1.8s infinite;
+}
+
+.pulse-dot-idle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  display: inline-block;
+}
+
+@keyframes pulse-dot-anim {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+}
+
+.attendance-hero-duration {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.attendance-hero-sub {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.attendance-metric-col {
+  text-align: right;
+  padding-right: 1.5rem;
+  border-right: 1px solid var(--border);
+}
+
+.attendance-metric-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.attendance-metric-value {
+  font-family: var(--font-mono);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.attendance-metric-unit {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.btn-toggle-shift {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--coral);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 0.875rem 2rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 170px;
+  box-shadow: 0 2px 8px rgba(241, 80, 42, 0.25);
+}
+
+.btn-toggle-shift:hover {
+  background: var(--coral-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(241, 80, 42, 0.35);
+}
+
+.btn-toggle-shift:active {
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════
+   TIME OFF & LEAVES (04-timeoff.md)
+   ═══════════════════════════════════════════════ */
+
+.timeoff-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.timeoff-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: -1px;
+}
+
+.timeoff-tab-btn:hover {
+  color: var(--ink);
+}
+
+.timeoff-tab-btn.is-active {
+  color: var(--coral);
+  font-weight: 600;
+  border-bottom-color: var(--coral);
+}
+
+.tab-counter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+/* Time Off Type Color Dots per 04-timeoff.md §Type color mapping */
+.timeoff-type-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.timeoff-type-dot.dot-sky {
+  background: var(--sky);
+}
+
+.timeoff-type-dot.dot-danger {
+  background: var(--danger);
+}
+
+.timeoff-type-dot.dot-ink {
+  background: var(--ink);
+}
+
+.timeoff-type-dot.dot-warning {
+  background: var(--warning);
+}
+
+.timeoff-type-dot.dot-success {
+  background: var(--success);
+}
+
+.timeoff-type-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* KPI Balances Grid */
+.timeoff-balances-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.timeoff-balance-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.balance-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.balance-card-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+
+.balance-card-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.balance-card-stat-num {
+  font-family: var(--font-mono);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.balance-card-stat-sub {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.balance-card-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--muted);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.balance-card-progress-bar {
+  height: 100%;
+  background: var(--coral);
+  border-radius: var(--r-pill);
+  transition: width 0.3s ease;
+}
+
+.balance-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Inline Action Buttons for Requests & Allocations per 04-timeoff.md */
+.btn-action-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.3rem 0.75rem;
+  background: var(--coral);
+  color: #ffffff;
+  border: 1px solid var(--coral);
+  border-radius: var(--r-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-action-approve:hover {
+  background: var(--coral-hover);
+  border-color: var(--coral-hover);
+}
+
+.btn-action-refuse {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.3rem 0.75rem;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--r-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-action-refuse:hover {
+  background: var(--danger-bg);
+}
+
+/* Color Swatch Picker for Leave Types */
+.palette-swatches-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.palette-swatch-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.palette-swatch-btn:hover {
+  transform: scale(1.15);
+}
+
+.palette-swatch-btn.is-selected {
+  border-color: var(--card);
+  box-shadow: 0 0 0 2px var(--ink);
+  transform: scale(1.1);
+}
+
+/* Daybook Modals */
+.daybook-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 16, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.daybook-modal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-float);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modal-enter 0.2s ease-out;
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.daybook-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.daybook-modal-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+
+.daybook-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.daybook-modal-close:hover {
+  color: var(--ink);
+  background: var(--muted);
+}
+
+.daybook-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.daybook-modal-footer {
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: rgba(246, 245, 241, 0.4);
+}
+
+/* ═══════════════════════════════════════════════
    RESPONSIVE QUERIES
    ═══════════════════════════════════════════════ */
 
@@ -1481,5 +2017,16 @@ select:disabled {
   }
   .page-header-row {
     flex-direction: column;
+  }
+  .attendance-hero-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .attendance-metric-col {
+    text-align: left;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+    padding-right: 0;
   }
 }

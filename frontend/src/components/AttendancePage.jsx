@@ -1,21 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
+  Plus, 
+  Search, 
   Clock, 
   CheckCircle2, 
-  XCircle, 
-  Plus, 
-  X, 
   AlertCircle, 
-  Calendar, 
-  User, 
+  X, 
   LogIn, 
   LogOut, 
-  Timer, 
-  Search, 
-  Building,
-  ArrowRight
+  Calendar,
+  Filter,
+  Info
 } from 'lucide-react';
-import Navbar from './Navbar';
+import AppLayout from './AppLayout';
 import { getCurrentUser } from '../api/auth';
 import { 
   getWidgetState, 
@@ -36,12 +33,14 @@ const AttendancePage = () => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState(null);
   const [todayWorkedHours, setTodayWorkedHours] = useState(0.0);
-  const [elapsedString, setElapsedString] = useState('00:00:00');
+  const [elapsedString, setElapsedString] = useState('0h 00m');
 
   // Attendance log data
   const [records, setRecords] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterToday, setFilterToday] = useState(false);
+  const [selectedEmployeeFilter, setSelectedEmployeeFilter] = useState('');
 
   // Admin Manual Entry Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,7 +55,7 @@ const AttendancePage = () => {
 
   const isAdminOrHr = user && ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_admin'].includes(user.role);
 
-  // Load all initial data
+  // Load initial data
   const loadData = async () => {
     try {
       setLoading(true);
@@ -71,11 +70,7 @@ const AttendancePage = () => {
 
       setUser(userData);
       setIsCheckedIn(widgetData.is_checked_in || false);
-      if (widgetData.check_in_time) {
-        setCheckInTime(widgetData.check_in_time);
-      } else {
-        setCheckInTime(null);
-      }
+      setCheckInTime(widgetData.check_in_time || null);
       setTodayWorkedHours(widgetData.today_worked_hours || 0.0);
       setRecords(attendanceData || []);
       setEmployees(empsData || []);
@@ -98,7 +93,7 @@ const AttendancePage = () => {
   // Live Timer for active check-in shift
   useEffect(() => {
     if (!isCheckedIn || !checkInTime) {
-      setElapsedString('00:00:00');
+      setElapsedString('0h 00m');
       return;
     }
 
@@ -110,10 +105,8 @@ const AttendancePage = () => {
       const totalSec = Math.floor(diffMs / 1000);
       const hours = Math.floor(totalSec / 3600);
       const minutes = Math.floor((totalSec % 3600) / 60);
-      const seconds = totalSec % 60;
 
-      const pad = (n) => String(n).padStart(2, '0');
-      setElapsedString(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
+      setElapsedString(`${hours}h ${String(minutes).padStart(2, '0')}m`);
     };
 
     updateTimer();
@@ -131,15 +124,15 @@ const AttendancePage = () => {
     try {
       if (isCheckedIn) {
         const res = await checkOut();
-        showToast(`Checked out successfully! Worked: ${res.worked_hours?.toFixed(2) || '0'} hrs`);
+        showToast(`Checked out successfully! Shift worked: ${res.worked_hours ? Number(res.worked_hours).toFixed(2) : '0'} hrs`);
       } else {
-        const res = await checkIn();
+        await checkIn();
         showToast('Checked in successfully! Shift started.');
       }
       window.dispatchEvent(new Event('attendance-updated'));
       await loadData();
     } catch (err) {
-      setError(err.message || 'Action failed');
+      setError(err.message || 'Shift action failed');
     }
   };
 
@@ -174,7 +167,6 @@ const AttendancePage = () => {
       });
       await loadData();
     } catch (err) {
-      console.error('Error creating attendance record:', err);
       setFormError(err.message || 'Failed to create record');
     } finally {
       setSubmitting(false);
@@ -183,312 +175,374 @@ const AttendancePage = () => {
 
   // Format date helper
   const formatDateTime = (isoString) => {
-    if (!isoString) return '--';
+    if (!isoString) return '—';
     const date = new Date(isoString);
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
     });
   };
 
+  const formatTimeOnly = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   // Filter records
-  const filteredRecords = records.filter(r => {
-    const term = searchTerm.toLowerCase();
-    const nameMatch = r.employee_name && r.employee_name.toLowerCase().includes(term);
-    const idMatch = String(r.employee_id).includes(term);
-    const notesMatch = r.notes && r.notes.toLowerCase().includes(term);
-    return !searchTerm || nameMatch || idMatch || notesMatch;
+  const isTodayDate = (isoString) => {
+    if (!isoString) return false;
+    const d = new Date(isoString);
+    const today = new Date();
+    return (
+      d.getDate() === today.getDate() &&
+      d.getMonth() === today.getMonth() &&
+      d.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const filteredRecords = records.filter((r) => {
+    const q = searchQuery.toLowerCase().trim();
+    const nameMatch = r.employee_name && r.employee_name.toLowerCase().includes(q);
+    const idMatch = String(r.employee_id).includes(q);
+    const notesMatch = r.notes && r.notes.toLowerCase().includes(q);
+    const matchesSearch = !q || nameMatch || idMatch || notesMatch;
+
+    const matchesToday = !filterToday || isTodayDate(r.check_in);
+    const matchesEmp = !selectedEmployeeFilter || String(r.employee_id) === String(selectedEmployeeFilter);
+
+    return matchesSearch && matchesToday && matchesEmp;
   });
 
   return (
-    <div className="app-layout-shell">
-      <Navbar activeModule="attendance" />
+    <AppLayout activeModule="attendance">
+      <div className="page-container">
+        {/* Toast Alerts */}
+        {successToast && (
+          <div className="alert-box alert-box-success" style={{ marginBottom: '1.25rem' }}>
+            <CheckCircle2 size={16} />
+            <span>{successToast}</span>
+          </div>
+        )}
 
-      <main className="app-layout-main">
-        <div className="employees-page">
-          {/* Header */}
-          <div className="employees-toolbar" style={{ alignItems: 'flex-start' }}>
-            <div className="employees-header">
-              <h1 className="employees-title">Attendance Tracking</h1>
-              <p className="employees-subtitle">
-                Real-time check-in status, daily work hours, and attendance shift records.
-              </p>
-            </div>
+        {error && (
+          <div className="alert-box alert-box-danger" style={{ marginBottom: '1.25rem' }}>
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
 
+        {/* Top Header Row per 03-attendance.md */}
+        <div className="page-header-row" style={{ marginBottom: '1.5rem' }}>
+          <div>
+            <h1 className="page-title font-display">Attendance</h1>
+            <p className="page-subtitle">
+              Real-time shift activity, daily worked hours, and employee attendance logs.
+            </p>
+          </div>
+
+          <div className="page-actions-group">
             {isAdminOrHr && (
               <button
                 type="button"
-                className="btn-primary"
-                onClick={() => setIsModalOpen(true)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                className="btn-coral"
+                onClick={() => {
+                  setFormError(null);
+                  setIsModalOpen(true);
+                }}
                 id="btn-manual-attendance"
               >
                 <Plus size={16} />
-                <span>Manual Entry</span>
+                <span>+ New</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Live Check-in Hero Widget Card per 03-attendance.md §Attendance Quick Widget */}
+        <div className="attendance-hero-card">
+          <div className="attendance-hero-info">
+            <div className="attendance-hero-badge">
+              <span className={isCheckedIn ? 'pulse-dot-live' : 'pulse-dot-idle'} />
+              <span style={{ color: isCheckedIn ? 'var(--success)' : 'var(--text-secondary)' }}>
+                {isCheckedIn ? 'Shift Active' : 'Checked Out'}
+              </span>
+            </div>
+
+            <h2 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--ink)', margin: 0 }}>
+              Welcome back, {user?.name || 'Team Member'}!
+            </h2>
+
+            <div className="attendance-hero-duration">
+              {isCheckedIn ? (
+                <span>
+                  {formatTimeOnly(checkInTime)} — Now <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>·</span> {elapsedString}
+                </span>
+              ) : (
+                <span style={{ fontSize: '1.5rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  Ready to start your work day?
+                </span>
+              )}
+            </div>
+
+            <div className="attendance-hero-sub">
+              Today: <strong>{todayWorkedHours.toFixed(2)}h</strong> completed
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            <div className="attendance-metric-col">
+              <div className="attendance-metric-label">Today's Total</div>
+              <div className="attendance-metric-value">
+                {todayWorkedHours.toFixed(2)}
+                <span className="attendance-metric-unit">hrs</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleToggleShift}
+              className="btn-toggle-shift"
+              id="btn-toggle-shift"
+            >
+              {isCheckedIn ? (
+                <>
+                  <LogOut size={18} />
+                  <span>Check Out</span>
+                </>
+              ) : (
+                <>
+                  <LogIn size={18} />
+                  <span>Check In</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Notes / Provenance panel per 03-attendance.md §Notes panel */}
+        <div style={{
+          background: 'var(--muted)',
+          borderRadius: 'var(--r-md)',
+          padding: '0.85rem 1.25rem',
+          border: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          marginBottom: '1.5rem',
+          fontSize: '0.8125rem',
+          color: 'var(--text-secondary)'
+        }}>
+          <Info size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <span>System-generated from check-in/out or manually corrected by an authorized user.</span>
+        </div>
+
+        {/* List Toolbar per 03-attendance.md §Screen: Attendance — List */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '1.25rem'
+        }}>
+          {/* Search Pill */}
+          <div className="search-pill-container" style={{ minWidth: '280px' }}>
+            <Search size={15} className="search-pill-icon" />
+            <input
+              type="text"
+              placeholder="Search by employee name or notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-pill-input"
+              id="search-attendance-input"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="search-clear-btn"
+              >
+                <X size={13} />
               </button>
             )}
           </div>
 
-          {/* Success Toast Notification */}
-          {successToast && (
-            <div className="toast-notification success" role="status">
-              <CheckCircle2 size={16} className="toast-icon" />
-              <span>{successToast}</span>
-            </div>
-          )}
+          {/* Filter Pills per 03-attendance.md: "Today" and "Employee: {name}" */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className={`filter-pill ${filterToday ? 'is-active' : ''}`}
+              onClick={() => setFilterToday(prev => !prev)}
+            >
+              <span>Today</span>
+              {filterToday && <span style={{ fontSize: '10px' }}>&bull;</span>}
+            </button>
 
-          {/* Error Alert */}
-          {error && (
-            <div className="toast-notification error" role="alert" style={{ marginBottom: '16px' }}>
-              <AlertCircle size={16} className="toast-icon" />
-              <span>{error}</span>
-            </div>
-          )}
+            {employees.length > 0 && (
+              <select
+                className={`filter-pill ${selectedEmployeeFilter ? 'is-active' : ''}`}
+                value={selectedEmployeeFilter}
+                onChange={(e) => setSelectedEmployeeFilter(e.target.value)}
+                style={{ cursor: 'pointer', appearance: 'none', paddingRight: '1rem' }}
+              >
+                <option value="">Employee: All</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>
+                    Employee: {emp.name}
+                  </option>
+                ))}
+              </select>
+            )}
 
-          {/* Hero Shift Card */}
-          <div className="attendance-hero-card">
-            <div className="attendance-hero-info">
-              <div className="attendance-hero-status">
-                <span 
-                  style={{
-                    display: 'inline-block',
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    backgroundColor: isCheckedIn ? 'var(--color-success)' : 'var(--color-danger)'
-                  }} 
-                />
-                <span style={{ fontWeight: 600, color: 'var(--neutral-800)' }}>
-                  {isCheckedIn ? 'CURRENTLY WORKING' : 'CURRENTLY CHECKED OUT'}
-                </span>
-                {checkInTime && isCheckedIn && (
-                  <span style={{ color: 'var(--neutral-500)' }}>
-                    • Since {formatDateTime(checkInTime)}
-                  </span>
-                )}
-              </div>
-
-              <h2 className="attendance-hero-title">
-                {isCheckedIn ? `Shift Active: ${elapsedString}` : 'Ready to start your work shift?'}
-              </h2>
-
-              <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--neutral-600)' }}>
-                {isCheckedIn 
-                  ? 'Your active working duration is being calculated in real time.'
-                  : 'Click the button to check in and record your arrival timestamp.'}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-500)', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Today's Worked Hours
-                </div>
-                <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--neutral-900)' }}>
-                  {todayWorkedHours.toFixed(2)} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--neutral-500)' }}>hrs</span>
-                </div>
-              </div>
-
+            {(filterToday || selectedEmployeeFilter || searchQuery) && (
               <button
                 type="button"
-                onClick={handleToggleShift}
-                className={`btn-toggle-shift ${isCheckedIn ? 'is-check-out' : 'is-check-in'}`}
-                id="btn-toggle-shift"
+                className="filter-pill"
+                onClick={() => {
+                  setFilterToday(false);
+                  setSelectedEmployeeFilter('');
+                  setSearchQuery('');
+                }}
+                style={{ color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.2)' }}
               >
-                {isCheckedIn ? (
-                  <>
-                    <LogOut size={20} />
-                    <span>Check Out</span>
-                  </>
-                ) : (
-                  <>
-                    <LogIn size={20} />
-                    <span>Check In</span>
-                  </>
-                )}
+                Clear Filters
               </button>
-            </div>
+            )}
           </div>
+        </div>
 
-          {/* Quick Metrics Bar */}
-          <div className="leave-balance-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: '20px' }}>
-            <div className="leave-balance-card">
-              <div className="balance-card-header">
-                <span className="balance-card-title">Check-in Status</span>
-                <span className={`status-pill ${isCheckedIn ? 'status-approved' : 'status-refused'}`}>
-                  {isCheckedIn ? 'Active' : 'Offline'}
-                </span>
-              </div>
-              <div className="balance-card-numbers">
-                <span className="balance-big-num" style={{ fontSize: '20px' }}>
-                  {isCheckedIn ? 'Present' : 'Not Working'}
-                </span>
-              </div>
-            </div>
+        {/* Attendance Table per 03-attendance.md */}
+        <div className="table-wrapper">
+          <table className="daybook-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th style={{ textAlign: 'right' }}>Worked Hours</th>
+                <th>Status</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                    Loading attendance records...
+                  </td>
+                </tr>
+              ) : filteredRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                    No attendance records found matching filters.
+                  </td>
+                </tr>
+              ) : (
+                filteredRecords.map((rec) => {
+                  const isCheckedOut = Boolean(rec.check_out);
+                  const isAbsent = !rec.check_in && !rec.check_out;
 
-            <div className="leave-balance-card">
-              <div className="balance-card-header">
-                <span className="balance-card-title">Accumulated Hours</span>
-                <Clock size={16} color="var(--color-primary)" />
-              </div>
-              <div className="balance-card-numbers">
-                <span className="balance-big-num">{todayWorkedHours.toFixed(2)}</span>
-                <span className="balance-sub-label">hours completed today</span>
-              </div>
-            </div>
-
-            <div className="leave-balance-card">
-              <div className="balance-card-header">
-                <span className="balance-card-title">Total Records</span>
-                <Calendar size={16} color="var(--color-primary)" />
-              </div>
-              <div className="balance-card-numbers">
-                <span className="balance-big-num">{records.length}</span>
-                <span className="balance-sub-label">logs in database</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Attendance Log Table Section */}
-          <div className="employees-table-container">
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--neutral-900)' }}>
-                  {isAdminOrHr ? 'All Employee Attendance Logs' : 'My Attendance Logs'}
-                </h3>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-500)' }}>
-                  Showing {filteredRecords.length} of {records.length} total entries
-                </span>
-              </div>
-
-              <div className="employee-search-box" style={{ maxWidth: '280px' }}>
-                <Search size={16} className="employee-search-icon" />
-                <input
-                  type="text"
-                  placeholder="Filter by employee or note..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="employee-search-input"
-                  id="search-attendance-input"
-                />
-              </div>
-            </div>
-
-            {loading ? (
-              <div style={{ padding: '48px', textAlign: 'center', color: 'var(--neutral-500)' }}>
-                Loading attendance records...
-              </div>
-            ) : filteredRecords.length === 0 ? (
-              <div style={{ padding: '48px', textAlign: 'center', color: 'var(--neutral-500)' }}>
-                No attendance logs found. Use the Check In button above to start your shift!
-              </div>
-            ) : (
-              <table className="employees-table">
-                <thead>
-                  <tr>
-                    <th>EMPLOYEE</th>
-                    <th>CHECK IN</th>
-                    <th>CHECK OUT</th>
-                    <th>WORKED HOURS</th>
-                    <th>OVERTIME</th>
-                    <th>STATUS</th>
-                    <th>NOTES</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRecords.map((rec) => (
+                  return (
                     <tr key={rec.id}>
+                      {/* Employee with avatar */}
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div 
-                            style={{ 
-                              width: '32px', 
-                              height: '32px', 
-                              borderRadius: '50%', 
-                              backgroundColor: 'var(--neutral-100)', 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center', 
-                              color: 'var(--color-primary)', 
-                              fontWeight: 700, 
-                              fontSize: '12px' 
-                            }}
-                          >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div className="avatar-circle-sm" style={{ background: 'var(--ink)' }}>
                             {rec.employee_name ? rec.employee_name.slice(0, 2).toUpperCase() : `#${rec.employee_id}`}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, color: 'var(--neutral-900)' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--ink)' }}>
                               {rec.employee_name || `Employee #${rec.employee_id}`}
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--neutral-500)' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                               ID: {rec.employee_id}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <span style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>
-                          {formatDateTime(rec.check_in)}
+
+                      {/* Check In */}
+                      <td>
+                        <span style={{ fontSize: '0.84rem', color: 'var(--ink)' }}>
+                          {isAbsent ? '—' : formatDateTime(rec.check_in)}
                         </span>
                       </td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        {rec.check_out ? (
-                          <span style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>
-                            {formatDateTime(rec.check_out)}
+
+                      {/* Check Out */}
+                      <td>
+                        <span style={{ fontSize: '0.84rem', color: isCheckedOut ? 'var(--ink)' : 'var(--coral)' }}>
+                          {isCheckedOut ? formatDateTime(rec.check_out) : (
+                            <span className="status-pill status-pill-warning">
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warning)', display: 'inline-block', marginRight: '5px' }} />
+                              In Progress
+                            </span>
+                          )}
+                        </span>
+                      </td>
+
+                      {/* Worked Hours in JetBrains Mono per 03-attendance.md */}
+                      <td className="wage-mono">
+                        {rec.worked_hours != null ? `${Number(rec.worked_hours).toFixed(2)}h` : '—'}
+                      </td>
+
+                      {/* Status Pill: Present (success soft with 6px dot) / Absent (danger soft) */}
+                      <td>
+                        {isAbsent ? (
+                          <span className="status-pill status-pill-danger">
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--danger)', display: 'inline-block', marginRight: '5px' }} />
+                            Absent
                           </span>
                         ) : (
-                          <span className="status-pill status-pending">
-                            Active Shift
+                          <span className="status-pill status-pill-success">
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block', marginRight: '5px' }} />
+                            Present
                           </span>
                         )}
                       </td>
-                      <td style={{ fontWeight: 600, color: 'var(--neutral-900)' }}>
-                        {rec.worked_hours != null ? `${Number(rec.worked_hours).toFixed(2)} hrs` : '--'}
-                      </td>
-                      <td style={{ color: rec.overtime_hours > 0 ? 'var(--color-success)' : 'var(--neutral-500)', fontWeight: 600 }}>
-                        {rec.overtime_hours > 0 ? `+${Number(rec.overtime_hours).toFixed(2)} hrs` : '0.00 hrs'}
-                      </td>
+
+                      {/* Notes */}
                       <td>
-                        <span className={`status-pill ${rec.check_out ? 'status-approved' : 'status-pending'}`}>
-                          {rec.check_out ? 'Completed' : 'Working'}
+                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                          {rec.notes || '—'}
                         </span>
                       </td>
-                      <td style={{ color: 'var(--neutral-600)', fontSize: 'var(--text-xs)', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {rec.notes || '--'}
-                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      </main>
+      </div>
 
-      {/* Admin Manual Entry Modal */}
+      {/* Manual Entry Modal per 03-attendance.md §Attendance — Form */}
       {isModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <div className="modal-header">
-              <h2 className="modal-title">Create Attendance Record</h2>
+        <div className="daybook-modal-backdrop" onClick={() => setIsModalOpen(false)}>
+          <div className="daybook-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="daybook-modal-header">
+              <h2 className="daybook-modal-title">Manual Attendance Entry</h2>
               <button 
                 type="button" 
-                className="modal-close-btn"
+                className="daybook-modal-close"
                 onClick={() => setIsModalOpen(false)}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleFormSubmit}>
-              <div className="modal-body">
+              <div className="daybook-modal-body">
                 {formError && (
-                  <div className="toast-notification error" style={{ marginBottom: '16px' }}>
-                    <AlertCircle size={16} />
+                  <div className="alert-box alert-box-danger">
+                    <AlertCircle size={15} />
                     <span>{formError}</span>
                   </div>
                 )}
@@ -503,69 +557,68 @@ const AttendancePage = () => {
                   >
                     {employees.map(emp => (
                       <option key={emp.id} value={emp.id}>
-                        {emp.name} ({emp.work_email || `ID: ${emp.id}`})
+                        {emp.name} ({emp.work_email || emp.job_position || `ID: ${emp.id}`})
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Check-In Datetime *</label>
-                  <input
-                    type="datetime-local"
-                    className="form-input"
-                    value={formData.check_in}
-                    onChange={(e) => setFormData({ ...formData, check_in: e.target.value })}
-                    required
-                  />
-                </div>
+                <div className="form-grid-2col">
+                  <div className="form-group">
+                    <label className="form-label">Check-In Datetime *</label>
+                    <input
+                      type="datetime-local"
+                      className="form-input"
+                      value={formData.check_in}
+                      onChange={(e) => setFormData({ ...formData, check_in: e.target.value })}
+                      required
+                    />
+                  </div>
 
-                <div className="form-group">
-                  <label className="form-label">Check-Out Datetime (Optional)</label>
-                  <input
-                    type="datetime-local"
-                    className="form-input"
-                    value={formData.check_out}
-                    onChange={(e) => setFormData({ ...formData, check_out: e.target.value })}
-                  />
-                  <span style={{ fontSize: '11px', color: 'var(--neutral-500)', marginTop: '4px', display: 'block' }}>
-                    Leave blank if employee is still working their shift.
-                  </span>
+                  <div className="form-group">
+                    <label className="form-label">Check-Out Datetime</label>
+                    <input
+                      type="datetime-local"
+                      className="form-input"
+                      value={formData.check_out}
+                      onChange={(e) => setFormData({ ...formData, check_out: e.target.value })}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Notes / Reason</label>
-                  <textarea
+                  <input
+                    type="text"
                     className="form-input"
-                    rows={2}
-                    placeholder="E.g., Manual correction, on-site visit..."
+                    placeholder="E.g., On-site client meeting, manual correction..."
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className="modal-footer">
+              <div className="daybook-modal-footer">
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-outline"
                   onClick={() => setIsModalOpen(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary"
+                  className="btn-coral"
                   disabled={submitting}
                 >
-                  {submitting ? 'Creating...' : 'Save Record'}
+                  {submitting ? 'Saving...' : 'Save Record'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 };
 

@@ -49,6 +49,9 @@ function App() {
         {/* Attendance & Time Off */}
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/time-off" element={<TimeOffPage />} />
+        <Route path="/time-off/requests" element={<TimeOffPage />} />
+        <Route path="/time-off/allocations" element={<TimeOffPage />} />
+        <Route path="/time-off/types" element={<TimeOffPage />} />
         <Route path="/time-off/*" element={<TimeOffPage />} />
 
         {/* Catch-all */}
