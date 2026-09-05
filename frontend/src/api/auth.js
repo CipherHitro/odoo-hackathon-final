@@ -146,3 +146,36 @@ export const getCurrentUser = async () => {
     throw error;
   }
 };
+
+export const listUsers = async () => {
+  try {
+    const response = await fetch('/auth/users');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to list users');
+    }
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateUser = async (userId, updateData) => {
+  try {
+    const response = await fetch(`/auth/users/${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateData),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to update user');
+    }
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+

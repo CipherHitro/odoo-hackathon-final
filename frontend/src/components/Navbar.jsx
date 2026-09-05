@@ -2,73 +2,63 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronDown, 
-  User, 
+  Search,
   LogOut, 
   Clock, 
   CheckCircle2, 
-  AlertCircle,
-  Users,
-  Briefcase,
-  Calendar,
-  Layers,
-  FileText,
-  DollarSign
+  Users, 
+  Briefcase, 
+  Calendar, 
+  Layers, 
+  FileText, 
+  ShieldCheck
 } from 'lucide-react';
 import { getCurrentUser, logoutUser } from '../api/auth';
+import { isAdmin } from '../utils/rbac';
 
-const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
+const Navbar = ({ activeModule: explicitActiveModule }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [user, setUser] = useState(null);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
-  const [activeAttendanceTime, setActiveAttendanceTime] = useState(null);
+  const [isTogglingAttendance, setIsTogglingAttendance] = useState(false);
   const navRef = useRef(null);
 
-  // Fetch current user details
   useEffect(() => {
     let isMounted = true;
     getCurrentUser()
       .then((data) => {
         if (isMounted && data) setUser(data);
       })
-      .catch(() => {
-        // Silently handle if unauthenticated
-      });
+      .catch(() => {});
 
-    const fetchWidget = () => {
+    const fetchAttendanceStatus = () => {
       fetch('/attendance/widget')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (isMounted && data) {
             setIsCheckedIn(data.is_checked_in || false);
-            if (data.check_in_time) {
-              setActiveAttendanceTime(data.check_in_time);
-            }
           }
         })
-        .catch(() => {
-          // Fallback gracefully
-        });
+        .catch(() => {});
     };
 
-    fetchWidget();
-    window.addEventListener('attendance-updated', fetchWidget);
+    fetchAttendanceStatus();
+    window.addEventListener('attendance-updated', fetchAttendanceStatus);
 
     return () => {
       isMounted = false;
-      window.removeEventListener('attendance-updated', fetchWidget);
+      window.removeEventListener('attendance-updated', fetchAttendanceStatus);
     };
   }, []);
 
-  // Close dropdowns on outside click or Escape key
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (navRef.current && !navRef.current.contains(e.target)) {
         setOpenDropdown(null);
       }
     };
-
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setOpenDropdown(null);
@@ -83,7 +73,6 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
     };
   }, []);
 
-  // Determine current active module from route or explicit prop
   const getActiveModule = () => {
     if (explicitActiveModule) return explicitActiveModule;
     const path = location.pathname;
@@ -102,7 +91,10 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
     if (path.startsWith('/payroll') || path.startsWith('/dashboard')) {
       return 'payroll';
     }
-    return 'employees'; // Default to match wireframe
+    if (path.startsWith('/admin') || path.startsWith('/users')) {
+      return 'admin';
+    }
+    return 'employees';
   };
 
   const active = getActiveModule();
@@ -115,13 +107,15 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
     try {
       await logoutUser();
     } catch {
-      // Continue to navigate anyway
+      // Proceed with navigation
     } finally {
-      navigate('/');
+      navigate('/login');
     }
   };
 
   const handleQuickAttendance = async () => {
+    if (isTogglingAttendance) return;
+    setIsTogglingAttendance(true);
     try {
       const endpoint = isCheckedIn ? '/attendance/check-out' : '/attendance/check-in';
       const res = await fetch(endpoint, { method: 'POST' });
@@ -132,20 +126,28 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
       }
     } catch (err) {
       console.error('Attendance toggle error', err);
+    } finally {
+      setIsTogglingAttendance(false);
     }
+  };
+
+  const getUserInitials = () => {
+    if (!user?.name) return 'U';
+    const parts = user.name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return user.name.slice(0, 2).toUpperCase();
   };
 
   return (
     <header className="navbar-container" ref={navRef}>
       <div className="navbar-inner">
-        {/* Left Side: Brand HR Badge + Module Tabs */}
+        {/* Left: Brand Identity & Nav Tabs */}
         <div className="navbar-left">
-          {/* HR Monogram Badge */}
-          <NavLink to="/dashboard" className="navbar-brand-badge" title="PeoplePay360 HR">
-            <span className="navbar-brand-text">HR</span>
+          <NavLink to="/dashboard" className="navbar-brand-badge" title="PeoplePay360">
+            <span className="navbar-brand-mark">P</span>
+            <span className="navbar-brand-title font-display">PeoplePay360</span>
           </NavLink>
 
-          {/* Module Navigation Tabs */}
           <nav className="navbar-menu" aria-label="Main Navigation">
             {/* 1. Employees Dropdown */}
             <div className={`navbar-item ${active === 'employees' ? 'is-active' : ''}`}>
@@ -156,7 +158,7 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
                 aria-expanded={openDropdown === 'employees'}
               >
                 <span>Employees</span>
-                <ChevronDown size={14} className={`dropdown-chevron ${openDropdown === 'employees' ? 'is-rotated' : ''}`} />
+                <ChevronDown size={13} className={`dropdown-chevron ${openDropdown === 'employees' ? 'is-rotated' : ''}`} />
               </button>
 
               {openDropdown === 'employees' && (
@@ -198,7 +200,7 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
                 aria-expanded={openDropdown === 'contracts'}
               >
                 <span>Contracts</span>
-                <ChevronDown size={14} className={`dropdown-chevron ${openDropdown === 'contracts' ? 'is-rotated' : ''}`} />
+                <ChevronDown size={13} className={`dropdown-chevron ${openDropdown === 'contracts' ? 'is-rotated' : ''}`} />
               </button>
 
               {openDropdown === 'contracts' && (
@@ -243,7 +245,7 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
                 aria-expanded={openDropdown === 'time-off'}
               >
                 <span>Time Off</span>
-                <ChevronDown size={14} className={`dropdown-chevron ${openDropdown === 'time-off' ? 'is-rotated' : ''}`} />
+                <ChevronDown size={13} className={`dropdown-chevron ${openDropdown === 'time-off' ? 'is-rotated' : ''}`} />
               </button>
 
               {openDropdown === 'time-off' && (
@@ -276,7 +278,7 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
               )}
             </div>
 
-            {/* 5. Payroll Link */}
+            {/* 5. Payroll Direct Link */}
             <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
               <NavLink
                 to="/dashboard"
@@ -286,22 +288,48 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
                 <span>Payroll</span>
               </NavLink>
             </div>
+
+            {/* 6. Admin Only - User Management Link */}
+            {isAdmin(user) && (
+              <div className={`navbar-item ${active === 'admin' ? 'is-active' : ''}`}>
+                <NavLink
+                  to="/admin/users"
+                  className="navbar-tab-button"
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <ShieldCheck size={14} style={{ marginRight: '5px', color: 'var(--sky)' }} />
+                  <span>Users</span>
+                </NavLink>
+              </div>
+            )}
           </nav>
         </div>
 
-        {/* Right Side: Red Attendance Indicator + User Profile */}
+        {/* Right: Search Pill + Attendance Widget + User Avatar */}
         <div className="navbar-right">
-          {/* Attendance Status Box (Red when checked out as shown in wireframe, Green when checked in) */}
+          {/* Global Search Pill per Foundations §5 */}
+          <div className="navbar-search-pill" onClick={() => {}}>
+            <Search size={14} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              className="search-input"
+              readOnly
+              onClick={() => {}}
+            />
+            <span className="search-badge">Ctrl K</span>
+          </div>
+
+          {/* Quick Attendance Pill */}
           <div className="attendance-widget-wrapper">
             <button
               type="button"
-              className={`attendance-status-box ${isCheckedIn ? 'is-checked-in' : 'is-checked-out'}`}
+              className={`attendance-status-pill ${isCheckedIn ? 'is-in' : 'is-out'}`}
               onClick={() => toggleDropdown('attendance-status')}
-              title={isCheckedIn ? "Checked In (Click for options)" : "Checked Out (Click to Check In)"}
-              aria-label="Attendance Status"
+              title={isCheckedIn ? "You are Checked In. Click for details." : "You are Checked Out. Click to Check In."}
             >
-              {/* Clean rounded status indicator square matching wireframe */}
-              <span className="attendance-indicator-inner" />
+              <span className={`status-dot ${isCheckedIn ? 'dot-success' : 'dot-danger'}`} />
+              <span className="attendance-text">{isCheckedIn ? 'Checked In' : 'Checked Out'}</span>
             </button>
 
             {openDropdown === 'attendance-status' && (
@@ -309,29 +337,31 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
                 <div className="popover-header">
                   <div className={`status-pill ${isCheckedIn ? 'status-pill-success' : 'status-pill-danger'}`}>
                     <span className="status-dot" />
-                    <span>{isCheckedIn ? 'Currently Checked In' : 'Currently Checked Out'}</span>
+                    <span>{isCheckedIn ? 'Currently Working' : 'Not Working Today'}</span>
                   </div>
                 </div>
-
                 <div className="popover-body">
                   <p className="popover-desc">
                     {isCheckedIn 
-                      ? "You are logged as present today. Ready to leave?" 
-                      : "Start tracking your worked hours for today."}
+                      ? "Your attendance timer is active. Wrap up your shift anytime." 
+                      : "Start tracking your worked hours today."}
                   </p>
                   <button
                     type="button"
+                    disabled={isTogglingAttendance}
                     onClick={handleQuickAttendance}
-                    className={`btn-attendance-action ${isCheckedIn ? 'btn-checkout' : 'btn-checkin'}`}
+                    className={`btn ${isCheckedIn ? 'btn-danger' : 'btn-primary'} w-full`}
                   >
-                    {isCheckedIn ? 'Check Out Now' : 'Check In Now'}
+                    {isTogglingAttendance 
+                      ? 'Updating...' 
+                      : isCheckedIn ? 'Check Out Now' : 'Check In Now'}
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* User Profile Avatar / Logout Dropdown */}
+          {/* User Profile Avatar */}
           <div className="navbar-user-wrapper">
             <button
               type="button"
@@ -340,27 +370,42 @@ const Navbar = ({ activeModule: explicitActiveModule, onCheckInToggle }) => {
               aria-expanded={openDropdown === 'user'}
               title={user ? `${user.name} (${user.email})` : 'User Profile'}
             >
-              <div className="avatar-initials">
-                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'HR'}
+              <div className="avatar-circle">
+                {getUserInitials()}
               </div>
             </button>
 
             {openDropdown === 'user' && (
               <div className="navbar-dropdown-menu navbar-dropdown-right user-dropdown-menu">
                 <div className="user-dropdown-header">
-                  <div className="user-dropdown-name">{user?.name || 'Authorized User'}</div>
+                  <div className="user-dropdown-name font-display">{user?.name || 'User'}</div>
                   <div className="user-dropdown-email">{user?.email || 'user@company.com'}</div>
-                  <span className="user-role-badge">
-                    {user?.role ? user.role.toUpperCase() : 'HR OFFICER'}
-                  </span>
+                  <div style={{ marginTop: '8px' }}>
+                    <span className="role-pill">
+                      {user?.role ? user.role.replace('_', ' ').toUpperCase() : 'USER'}
+                    </span>
+                  </div>
                 </div>
+
                 <div className="dropdown-divider" />
+
+                {isAdmin(user) && (
+                  <NavLink
+                    to="/admin/users"
+                    className="navbar-dropdown-link"
+                    onClick={() => setOpenDropdown(null)}
+                  >
+                    <ShieldCheck size={14} />
+                    <span>User Management</span>
+                  </NavLink>
+                )}
+
                 <button
                   type="button"
                   onClick={handleLogout}
                   className="navbar-dropdown-link text-danger"
                 >
-                  <LogOut size={15} />
+                  <LogOut size={14} />
                   <span>Log Out</span>
                 </button>
               </div>

@@ -58,6 +58,32 @@ export const getDepartments = async () => {
   return await res.json();
 };
 
+export const createDepartment = async (data) => {
+  const res = await fetch('/departments/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to create department');
+  }
+  return await res.json();
+};
+
+export const updateDepartment = async (id, data) => {
+  const res = await fetch(`/departments/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update department');
+  }
+  return await res.json();
+};
+
 export const getWorkingSchedules = async () => {
   const res = await fetch('/working-schedules/', {
     headers: { 'Content-Type': 'application/json' },
@@ -67,3 +93,51 @@ export const getWorkingSchedules = async () => {
   }
   return await res.json();
 };
+
+export const getWorkingScheduleById = async (id) => {
+  const res = await fetch(`/working-schedules/${id}`, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to fetch schedule');
+  }
+  return await res.json();
+};
+
+export const createWorkingSchedule = async (data) => {
+  const res = await fetch('/working-schedules/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to create working schedule');
+  }
+  return await res.json();
+};
+
+export const updateWorkingSchedule = async (id, data) => {
+  const res = await fetch(`/working-schedules/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update working schedule');
+  }
+  return await res.json();
+};
+
+export const getEmployeeContracts = async (employeeId) => {
+  const res = await fetch(`/employees/${employeeId}/contracts`, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) {
+    return [];
+  }
+  return await res.json();
+};
+
