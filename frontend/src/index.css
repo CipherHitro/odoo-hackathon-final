@@ -258,7 +258,7 @@ textarea {
 }
 
 .form-control:focus, 
-input:focus, 
+input:not(.search-input):not(.search-pill-input):not(.employee-search-input):focus, 
 select:focus, 
 textarea:focus {
   background: var(--card);
@@ -705,17 +705,43 @@ select:disabled {
   flex-shrink: 0;
 }
 
-.navbar-search-pill .search-input {
-  background: none;
-  border: none;
-  outline: none;
+.navbar-search-pill .search-input,
+.search-pill-container .search-pill-input,
+.employee-search-box .employee-search-input,
+.search-input,
+.search-pill-input,
+.employee-search-input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
   font-family: var(--font-ui);
   font-size: 0.84rem;
   color: var(--text-primary);
   width: 100%;
+  height: 100%;
 }
 
-.navbar-search-pill .search-input::placeholder {
+.navbar-search-pill .search-input:focus,
+.search-pill-container .search-pill-input:focus,
+.employee-search-box .employee-search-input:focus,
+.search-input:focus,
+.search-pill-input:focus,
+.employee-search-input:focus {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.navbar-search-pill .search-input::placeholder,
+.search-pill-container .search-pill-input::placeholder,
+.employee-search-box .employee-search-input::placeholder,
+.search-input::placeholder,
+.search-pill-input::placeholder,
+.employee-search-input::placeholder {
   color: var(--text-muted);
   font-size: 0.84rem;
 }
@@ -749,18 +775,29 @@ select:disabled {
   flex-shrink: 0;
 }
 
-.search-pill-input {
-  background: none;
-  border: none;
-  outline: none;
-  font-family: var(--font-ui);
-  font-size: 0.84rem;
-  color: var(--ink);
-  width: 100%;
+/* Standalone employee-search-box used in Departments & Schedules */
+.employee-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border-radius: var(--r-pill);
+  padding: 0 1rem;
+  height: 38px;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
-.search-pill-input::placeholder {
+.employee-search-box:focus-within {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 3px var(--coral-bg);
+}
+
+.employee-search-box .employee-search-icon {
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .search-clear-btn {
