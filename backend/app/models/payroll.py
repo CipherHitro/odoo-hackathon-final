@@ -34,6 +34,7 @@ class SalaryRule(Base):
 
 class PayrunStatus(str, enum.Enum):
     DRAFT = "draft"
+    COMPUTED = "computed"
     VALIDATED = "validated"
     PAID = "paid"
 
