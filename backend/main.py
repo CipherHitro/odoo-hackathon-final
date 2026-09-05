@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.core.redis import redis_client
 
+from app.api.attendance.routes import router as attendance_router
 from app.api.users.routes import router as users_router
 
 @asynccontextmanager
@@ -21,6 +22,7 @@ app = FastAPI(
 
 
 app.include_router(users_router)
+app.include_router(attendance_router)
 
 
 @app.get("/")
