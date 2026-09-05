@@ -35,6 +35,14 @@ export const canManageAttendance = (user) => {
   return [UserRole.ADMIN, UserRole.HR_MANAGER].includes(user?.role);
 };
 
+export const canManageContracts = (user) => {
+  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
+};
+
+export const canEditContracts = (user) => {
+  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN].includes(user?.role);
+};
+
 // Department color mapping per 01-employees.md §1
 export const getDepartmentColor = (deptName) => {
   if (!deptName) return 'var(--ink)';

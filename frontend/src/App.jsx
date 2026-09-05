@@ -4,6 +4,8 @@ import AuthCard from './components/AuthCard';
 import EmployeesPage from './components/EmployeesPage';
 import DepartmentList from './components/employees/DepartmentList';
 import WorkingScheduleList from './components/employees/WorkingScheduleList';
+import ContractsPage from './components/contracts/ContractsPage';
+import SalaryStructureList from './components/contracts/SalaryStructureList';
 import UserManagement from './components/admin/UserManagement';
 import TimeOffPage from './components/TimeOffPage';
 import AttendancePage from './components/AttendancePage';
@@ -39,6 +41,10 @@ function App() {
           path="/admin/users" 
           element={<UserManagement />} 
         />
+
+        {/* Contracts Module */}
+        <Route path="/contracts" element={<ContractsPage />} />
+        <Route path="/salary-structures" element={<SalaryStructureList />} />
 
         {/* Attendance & Time Off */}
         <Route path="/attendance" element={<AttendancePage />} />

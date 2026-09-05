@@ -1391,6 +1391,66 @@ select:disabled {
 }
 
 /* ═══════════════════════════════════════════════
+   CONTRACTS & SALARY STRUCTURES (02-contracts.md)
+   ═══════════════════════════════════════════════ */
+
+/* Active Running Contract Emphasis per 02-contracts.md §Active-contract emphasis */
+.daybook-table tbody tr.contract-running-row {
+  border-left: 3px solid var(--coral);
+  background: rgba(241, 80, 42, 0.03);
+}
+
+.daybook-table tbody tr.contract-running-row:hover {
+  background: rgba(241, 80, 42, 0.06);
+}
+
+.wage-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.ref-code-mono {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.salary-structure-box {
+  background: var(--muted);
+  border-radius: var(--r-md);
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.salary-structure-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+}
+
+.salary-structure-note {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.restricted-access-card {
+  max-width: 520px;
+  margin: 4rem auto;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+/* ═══════════════════════════════════════════════
    RESPONSIVE QUERIES
    ═══════════════════════════════════════════════ */
 
