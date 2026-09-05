@@ -9,6 +9,7 @@ import SalaryStructureList from './components/contracts/SalaryStructureList';
 import UserManagement from './components/admin/UserManagement';
 import TimeOffPage from './components/TimeOffPage';
 import AttendancePage from './components/AttendancePage';
+import PayrollPage from './components/PayrollPage';
 import { getCurrentUser } from './api/auth';
 import { UserRole } from './utils/rbac';
 
@@ -53,6 +54,15 @@ function App() {
         <Route path="/time-off/allocations" element={<TimeOffPage />} />
         <Route path="/time-off/types" element={<TimeOffPage />} />
         <Route path="/time-off/*" element={<TimeOffPage />} />
+
+        {/* Payroll Module */}
+        <Route path="/payroll" element={<PayrollPage />} />
+        <Route path="/payroll/dashboard" element={<PayrollPage />} />
+        <Route path="/payroll/payruns" element={<PayrollPage />} />
+        <Route path="/payroll/payslips" element={<PayrollPage />} />
+        <Route path="/payroll/structures" element={<PayrollPage />} />
+        <Route path="/payroll/rules" element={<PayrollPage />} />
+        <Route path="/payroll/*" element={<PayrollPage />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

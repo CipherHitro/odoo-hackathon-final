@@ -1,4 +1,4 @@
-from sqlalchemy import String, ForeignKey, Integer, Float, Text, Boolean, Numeric, Date, DateTime
+from sqlalchemy import String, ForeignKey, Integer, Float, Text, Boolean, Numeric, Date, DateTime, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from datetime import datetime, date
@@ -49,7 +49,7 @@ class Payrun(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=PayrunStatus.DRAFT)
 
     salary_structure: Mapped["SalaryStructure"] = relationship("SalaryStructure")
-    payslips: Mapped[list["Payslip"]] = relationship("Payslip", back_populates="payrun")
+    payslips: Mapped[list["Payslip"]] = relationship("Payslip", back_populates="payrun", cascade="all, delete-orphan")
 
 class PayslipStatus(str, enum.Enum):
     DRAFT = "draft"
@@ -57,6 +57,9 @@ class PayslipStatus(str, enum.Enum):
 
 class Payslip(Base):
     __tablename__ = "payslips"
+    __table_args__ = (
+        UniqueConstraint("payrun_id", "employee_id", name="uq_payrun_employee"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     payrun_id: Mapped[int] = mapped_column(ForeignKey("payruns.id"), nullable=False, index=True)
@@ -76,7 +79,12 @@ class Payslip(Base):
     payrun: Mapped["Payrun"] = relationship("Payrun", back_populates="payslips")
     employee: Mapped["Employee"] = relationship("Employee")
     contract: Mapped["Contract | None"] = relationship("Contract")
-    lines: Mapped[list["PayslipLine"]] = relationship("PayslipLine", back_populates="payslip", order_by="PayslipLine.sequence")
+    lines: Mapped[list["PayslipLine"]] = relationship(
+        "PayslipLine",
+        back_populates="payslip",
+        cascade="all, delete-orphan",
+        order_by="PayslipLine.sequence"
+    )
 
 class PayslipLine(Base):
     __tablename__ = "payslip_lines"

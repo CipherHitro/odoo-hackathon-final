@@ -11,10 +11,13 @@ import {
   Calendar, 
   Layers, 
   FileText, 
-  ShieldCheck
+  ShieldCheck,
+  BarChart2,
+  Zap,
+  Settings,
 } from 'lucide-react';
 import { getCurrentUser, logoutUser } from '../api/auth';
-import { isAdmin } from '../utils/rbac';
+import { isAdmin, UserRole, canViewPayrollAdminTabs } from '../utils/rbac';
 
 const Navbar = ({ activeModule: explicitActiveModule }) => {
   const location = useLocation();
@@ -278,16 +281,57 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
               )}
             </div>
 
-            {/* 5. Payroll Direct Link */}
-            <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
-              <NavLink
-                to="/dashboard"
-                className="navbar-tab-button"
-                onClick={() => setOpenDropdown(null)}
-              >
-                <span>Payroll</span>
-              </NavLink>
-            </div>
+            {/* 5. Payroll Navigation per permission.txt */}
+            {user?.role === UserRole.EMPLOYEE && (
+              <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
+                <NavLink
+                  to="/payroll/payslips"
+                  className="navbar-tab-button"
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  <span>My Payslips</span>
+                </NavLink>
+              </div>
+            )}
+
+            {canViewPayrollAdminTabs(user) && (
+              <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
+                <button
+                  type="button"
+                  className="navbar-tab-button"
+                  onClick={() => toggleDropdown('payroll')}
+                  aria-expanded={openDropdown === 'payroll'}
+                >
+                  <span>Payroll</span>
+                  <ChevronDown size={13} className={`dropdown-chevron ${openDropdown === 'payroll' ? 'is-rotated' : ''}`} />
+                </button>
+
+                {openDropdown === 'payroll' && (
+                  <div className="navbar-dropdown-menu">
+                    <NavLink to="/payroll/dashboard" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
+                      <BarChart2 size={15} />
+                      <span>Dashboard</span>
+                    </NavLink>
+                    <NavLink to="/payroll/payruns" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
+                      <Zap size={15} />
+                      <span>Payruns</span>
+                    </NavLink>
+                    <NavLink to="/payroll/payslips" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
+                      <FileText size={15} />
+                      <span>Payslips</span>
+                    </NavLink>
+                    <NavLink to="/payroll/structures" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
+                      <Layers size={15} />
+                      <span>Structures {user?.role === UserRole.HR_PAYROLL_USER ? '(Read-only)' : ''}</span>
+                    </NavLink>
+                    <NavLink to="/payroll/rules" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
+                      <Settings size={15} />
+                      <span>Rules {user?.role === UserRole.HR_PAYROLL_USER ? '(Read-only)' : ''}</span>
+                    </NavLink>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 6. Admin Only - User Management Link */}
             {isAdmin(user) && (

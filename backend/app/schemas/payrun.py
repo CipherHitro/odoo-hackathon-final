@@ -4,6 +4,12 @@ from typing import List, Optional
 from decimal import Decimal
 from app.models.payroll import PayrunStatus, PayslipStatus
 
+# Employee Minimal
+class EmployeeMinimal(BaseModel):
+    id: int
+    name: str
+    model_config = ConfigDict(from_attributes=True)
+
 # Payslip Line
 class PayslipLineBase(BaseModel):
     rule_name: str
@@ -35,6 +41,7 @@ class PayslipBase(BaseModel):
 
 class PayslipResponse(PayslipBase):
     id: int
+    employee: Optional[EmployeeMinimal] = None
     lines: List[PayslipLineResponse] = []
     model_config = ConfigDict(from_attributes=True)
 
@@ -53,6 +60,7 @@ class PayrunUpdate(BaseModel):
     salary_structure_id: Optional[int] = None
     date_from: Optional[date] = None
     date_to: Optional[date] = None
+    status: Optional[str] = None
 
 class PayrunResponse(PayrunBase):
     id: int
@@ -62,3 +70,6 @@ class PayrunResponse(PayrunBase):
 
 class PayrunComputePayload(BaseModel):
     employee_ids: Optional[List[int]] = None
+
+class AssignContractPayload(BaseModel):
+    contract_id: int

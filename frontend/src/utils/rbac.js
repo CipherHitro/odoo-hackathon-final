@@ -20,19 +20,48 @@ export const isAdmin = (user) => {
 };
 
 export const canManageEmployees = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER].includes(user?.role);
+  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
 };
 
 export const canManagePayroll = (user) => {
   return [UserRole.ADMIN, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
 };
 
+// Payroll Module Access per permission.txt:
+// - Admin & HR Payroll Manager: Full CRUD on Payruns, Payslips, Structures, Rules
+// - HR Payroll User: Manage Payruns (Create, Compute, Validate, Mark Paid, Edit; NO Delete), Manage Payslips, Read-only Structures & Rules
+// - Employee: View own payslips only (no payruns, structures, rules)
+// - HR Manager: NO access to Payroll
+export const canAccessPayrollModule = (user) => {
+  return [UserRole.ADMIN, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER, UserRole.EMPLOYEE].includes(user?.role);
+};
+
+export const canViewPayrollAdminTabs = (user) => {
+  return [UserRole.ADMIN, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
+};
+
+export const canManagePayruns = (user) => {
+  return [UserRole.ADMIN, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
+};
+
+export const canDeletePayrun = (user) => {
+  return [UserRole.ADMIN, UserRole.HR_PAYROLL_ADMIN].includes(user?.role);
+};
+
+export const canManageStructures = (user) => {
+  return [UserRole.ADMIN, UserRole.HR_PAYROLL_ADMIN].includes(user?.role);
+};
+
+export const canManageRules = (user) => {
+  return [UserRole.ADMIN, UserRole.HR_PAYROLL_ADMIN].includes(user?.role);
+};
+
 export const canApproveTimeOff = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER].includes(user?.role);
+  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
 };
 
 export const canManageAttendance = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER].includes(user?.role);
+  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
 };
 
 export const canManageContracts = (user) => {
@@ -40,7 +69,7 @@ export const canManageContracts = (user) => {
 };
 
 export const canEditContracts = (user) => {
-  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN].includes(user?.role);
+  return [UserRole.ADMIN, UserRole.HR_MANAGER, UserRole.HR_PAYROLL_ADMIN, UserRole.HR_PAYROLL_USER].includes(user?.role);
 };
 
 // Department color mapping per 01-employees.md §1

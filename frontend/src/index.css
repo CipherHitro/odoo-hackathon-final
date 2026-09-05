@@ -357,6 +357,22 @@ select:disabled {
   background: var(--danger);
 }
 
+.status-pill-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.status-pill-warning .status-dot, .dot-warning {
+  background: var(--warning);
+}
+
+.status-pill-sky {
+  background: var(--sky-bg);
+  color: var(--sky);
+}
+.status-pill-sky .status-dot, .dot-sky {
+  background: var(--sky);
+}
+
 .role-pill {
   display: inline-flex;
   align-items: center;
@@ -1978,6 +1994,347 @@ select:disabled {
 
 .daybook-modal-footer {
   padding: 1.25rem 1.5rem;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.module-tab-btn:hover {
+  background: var(--muted);
+  color: var(--text-primary);
+}
+
+.module-tab-btn.is-active {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Small icon button (delete, edit in table rows) */
+.btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-icon-sm:hover {
+  background: var(--muted);
+}
+
+/* Sky-tinted soft pill (validated, done) */
+.status-pill.pill-soft-sky {
+  background: var(--sky-bg);
+  color: var(--sky);
+  border: none;
+}
+
+/* Danger soft pill (deduction category) */
+.status-pill.pill-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: none;
+}
+
+/* Spin animation for loading spinners */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+/* btn-sm variant */
+.btn-action-approve:hover {
+  background: var(--coral-hover);
+  border-color: var(--coral-hover);
+}
+
+.btn-action-refuse {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.3rem 0.75rem;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--r-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-action-refuse:hover {
+  background: var(--danger-bg);
+}
+
+/* Color Swatch Picker for Leave Types */
+.palette-swatches-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.palette-swatch-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.palette-swatch-btn:hover {
+  transform: scale(1.15);
+}
+
+.palette-swatch-btn.is-selected {
+  border-color: var(--card);
+  box-shadow: 0 0 0 2px var(--ink);
+  transform: scale(1.1);
+}
+
+/* Daybook Modals */
+.daybook-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 16, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.daybook-modal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-float);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modal-enter 0.2s ease-out;
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.daybook-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.daybook-modal-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+
+.daybook-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.daybook-modal-close:hover {
+  color: var(--ink);
+  background: var(--muted);
+}
+
+.daybook-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.daybook-modal-footer {
+  padding: 1.25rem 1.5rem;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.module-tab-btn:hover {
+  background: var(--muted);
+  color: var(--text-primary);
+}
+
+.module-tab-btn.is-active {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Small icon button (delete, edit in table rows) */
+.btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-icon-sm:hover {
+  background: var(--muted);
+}
+
+/* Sky-tinted soft pill (validated, done) */
+.status-pill.pill-soft-sky {
+  background: var(--sky-bg);
+  color: var(--sky);
+  border: none;
+}
+
+/* Danger soft pill (deduction category) */
+.status-pill.pill-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: none;
+}
+
+/* Spin animation for loading spinners */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+/* btn-sm variant */
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+/* btn-icon variant */
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-icon:hover {
+  background: var(--muted);
+  color: var(--ink);
+}
+
+.btn-icon-danger {
+  color: var(--danger) !important;
+}
+
+.btn-icon-danger:hover {
+  background: var(--danger-bg) !important;
+  color: var(--danger) !important;
+  border-color: rgba(220, 38, 38, 0.3) !important;
+}
+
+.btn-icon svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.daybook-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.daybook-modal-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+
+.daybook-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.daybook-modal-close:hover {
+  color: var(--ink);
+  background: var(--muted);
+}
+
+.daybook-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.daybook-modal-footer {
+  padding: 1.25rem 1.5rem;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -2029,4 +2386,61 @@ select:disabled {
     padding-bottom: 1rem;
     padding-right: 0;
   }
+}
+
+/* ═══════════════════════════════════════════════
+   PAYROLL PAGE — Module Tabs & Missing Utilities
+   ═══════════════════════════════════════════════ */
+
+/* Payroll Sub-nav tabs matching Time Off & Attendance */
+.payroll-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.payroll-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: -1px;
+}
+
+.payroll-tab-btn:hover {
+  color: var(--ink);
+}
+
+.payroll-tab-btn.is-active {
+  color: var(--coral);
+  font-weight: 600;
+  border-bottom-color: var(--coral);
+}
+
+
+/* Status Pill Variations */
+.status-pill.pill-solid {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+}
+.status-pill.pill-soft-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border: none;
+}
+.status-pill.pill-neutral {
+  background: var(--muted);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
 }

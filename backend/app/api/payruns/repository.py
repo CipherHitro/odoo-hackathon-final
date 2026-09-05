@@ -14,7 +14,12 @@ class PayrunRepository:
     @staticmethod
     async def get_payruns(db: AsyncSession) -> Sequence[Payrun]:
         result = await db.execute(
-            select(Payrun).order_by(Payrun.date_from.desc())
+            select(Payrun)
+            .options(
+                selectinload(Payrun.payslips).selectinload(Payslip.lines),
+                selectinload(Payrun.payslips).selectinload(Payslip.employee)
+            )
+            .order_by(Payrun.date_from.desc())
         )
         return result.scalars().all()
 
@@ -23,7 +28,8 @@ class PayrunRepository:
         result = await db.execute(
             select(Payrun)
             .options(
-                selectinload(Payrun.payslips).selectinload(Payslip.lines)
+                selectinload(Payrun.payslips).selectinload(Payslip.lines),
+                selectinload(Payrun.payslips).selectinload(Payslip.employee)
             )
             .where(Payrun.id == payrun_id)
             .execution_options(populate_existing=True)
@@ -45,11 +51,18 @@ class PayrunRepository:
 
     @staticmethod
     async def delete_payrun(db: AsyncSession, payrun: Payrun) -> None:
+        if payrun.payslips:
+            for slip in payrun.payslips:
+                if slip.lines:
+                    for line in slip.lines:
+                        await db.delete(line)
+                await db.delete(slip)
         await db.delete(payrun)
         await db.commit()
 
     @staticmethod
-    async def get_active_contract(db: AsyncSession, employee_id: int, date_from: date, date_to: date) -> Contract | None:
+    async def get_active_contract(db: AsyncSession, employee_id: int, date_from: date, date_to: date) -> tuple[Contract | None, bool]:
+        # 1. First priority: active running contract overlapping the pay period
         result = await db.execute(
             select(Contract)
             .options(
@@ -65,9 +78,30 @@ class PayrunRepository:
             )
         )
         contracts = result.scalars().all()
-        if len(contracts) != 1:
-            return None # Ambiguous or missing
-        return contracts[0]
+        if len(contracts) >= 1:
+            return contracts[0], False
+
+        # 2. Second priority: Post-tenure payment / settlement fallback
+        # If no running contract strictly overlaps the payrun period, find the employee's most recent contract on file
+        fallback_result = await db.execute(
+            select(Contract)
+            .options(
+                selectinload(Contract.working_schedule).selectinload(WorkingSchedule.schedule_lines)
+            )
+            .where(
+                and_(
+                    Contract.employee_id == employee_id,
+                    Contract.status.in_([ContractStatus.RUNNING, ContractStatus.EXPIRED, ContractStatus.DRAFT])
+                )
+            )
+            .order_by(Contract.end_date.desc().nullslast(), Contract.start_date.desc())
+        )
+        fallback_contracts = fallback_result.scalars().all()
+        if fallback_contracts:
+            return fallback_contracts[0], True
+
+        # 3. No contract exists on file for this employee
+        return None, False
 
     @staticmethod
     async def get_attendance_hours(db: AsyncSession, employee_id: int, date_from: date, date_to: date) -> float:
@@ -108,10 +142,34 @@ class PayrunRepository:
         result = await db.execute(query.options(selectinload(Payslip.lines)))
         payslips = result.scalars().all()
         for p in payslips:
+            if p.lines:
+                for line in p.lines:
+                    await db.delete(line)
             await db.delete(p)
+        await db.flush()
         await db.commit()
 
     @staticmethod
     async def save_payslips(db: AsyncSession, payslips: List[Payslip]) -> None:
         db.add_all(payslips)
         await db.commit()
+
+    @staticmethod
+    async def find_overlapping_payslips(
+        db: AsyncSession, employee_id: int, date_from: date, date_to: date, exclude_payrun_id: int
+    ) -> Sequence[Payslip]:
+        result = await db.execute(
+            select(Payslip)
+            .join(Payrun, Payslip.payrun_id == Payrun.id)
+            .options(selectinload(Payslip.payrun))
+            .where(
+                and_(
+                    Payslip.employee_id == employee_id,
+                    Payslip.payrun_id != exclude_payrun_id,
+                    Payslip.date_from <= date_to,
+                    Payslip.date_to >= date_from,
+                )
+            )
+        )
+        return result.scalars().all()
+

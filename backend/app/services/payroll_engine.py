@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 import calendar
 
-from app.models.payroll import Payrun, Payslip, PayslipLine, SalaryStructure, SalaryRule, PayslipStatus
+from app.models.payroll import Payrun, Payslip, PayslipLine, SalaryStructure, SalaryRule, PayslipStatus, PayrunStatus
 from app.models.employee import Employee
 from app.api.payruns.repository import PayrunRepository
 from app.api.payroll.repository import PayrollRepository
@@ -78,8 +78,8 @@ class PayrollEngine:
 
         # 2. Iterate employees
         for emp_id in employee_ids:
-            # 3. Find applicable contract
-            contract = await PayrunRepository.get_active_contract(db, emp_id, payrun.date_from, payrun.date_to)
+            # 3. Find applicable contract (active running or post-tenure fallback)
+            contract, is_post_tenure = await PayrunRepository.get_active_contract(db, emp_id, payrun.date_from, payrun.date_to)
             
             payslip = Payslip(
                 payrun_id=payrun.id,
@@ -100,9 +100,14 @@ class PayrollEngine:
             
             if not contract:
                 payslip.has_warning = True
-                payslip.warning_message = "No active running contract found for this period."
+                payslip.warning_message = "No contract on file for this employee. Assign or create a contract to calculate salary."
                 payslips.append(payslip)
                 continue
+
+            if is_post_tenure:
+                payslip.has_warning = True
+                end_str = contract.end_date.strftime("%d %b %Y") if contract.end_date else "prior to period"
+                payslip.warning_message = f"Post-tenure settlement: Calculated from last contract {contract.reference} (tenure ended {end_str})."
 
             # 4. Gather Attendance & Time Off Context
             scheduled_days = PayrollEngine._calculate_scheduled_days(contract, payrun.date_from, payrun.date_to)
@@ -161,6 +166,19 @@ class PayrollEngine:
             except Exception as e:
                 payslip.has_warning = True
                 payslip.warning_message = f"Calculation failed: {str(e)}"
+
+            # Double Payment Guard: Check if employee has overlapping payslips in other payruns
+            overlaps = await PayrunRepository.find_overlapping_payslips(
+                db, emp_id, payrun.date_from, payrun.date_to, payrun.id
+            )
+            paid_overlaps = [o for o in overlaps if o.payrun.status in (PayrunStatus.VALIDATED, PayrunStatus.PAID)]
+            if paid_overlaps:
+                payslip.has_warning = True
+                other_p = paid_overlaps[0].payrun
+                payslip.warning_message = (
+                    f"Double payment alert: Employee was already paid/validated for overlapping period "
+                    f"in Payrun '{other_p.name}' ({paid_overlaps[0].date_from} to {paid_overlaps[0].date_to})."
+                )
                 
             payslips.append(payslip)
 
