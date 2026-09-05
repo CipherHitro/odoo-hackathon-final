@@ -6,7 +6,7 @@ from app.api.users.repository import UserRepository
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_access_token
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 async def get_current_user(
@@ -68,10 +68,41 @@ async def get_current_admin_or_bootstrap(
         return None
 
     current_user = await get_current_user(request, db)
-    if current_user.role != "admin":
+    if current_user.role != UserRole.ADMIN.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only administrators can register users",
         )
 
     return current_user
+
+
+def require_roles(*roles: str | UserRole):
+    """FastAPI dependency to enforce Role-Based Access Control (RBAC).
+
+    Usage:
+        current_user: User = Depends(require_roles(UserRole.ADMIN))
+        current_user: User = Depends(require_roles(*HR_ROLES))
+    """
+    allowed_roles = {
+        r.value if isinstance(r, UserRole) else str(r) for r in roles
+    }
+
+    async def role_checker(
+        current_user: User = Depends(get_current_user),
+    ) -> User:
+        if not current_user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is inactive",
+            )
+
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operation not permitted for current role",
+            )
+
+        return current_user
+
+    return role_checker

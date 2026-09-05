@@ -18,10 +18,7 @@ app = FastAPI(
     title="One Final Shot at Odoo",
     lifespan=lifespan,
 )
-
-
 app.include_router(api_router)
-
 
 @app.get("/")
 async def root():
