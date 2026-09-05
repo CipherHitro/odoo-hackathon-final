@@ -368,6 +368,34 @@ const TimeOffPage = () => {
     return !q || t.name.toLowerCase().includes(q) || (t.notes && t.notes.toLowerCase().includes(q));
   });
 
+  // Aggregate balance cards by leave type so multiple allocations for the same leave type combine
+  const displayBalanceCards = React.useMemo(() => {
+    const map = new Map();
+    allocations.forEach((alloc) => {
+      const key = alloc.time_off_type_id || alloc.type_name;
+      if (!map.has(key)) {
+        map.set(key, {
+          id: alloc.id,
+          type_name: alloc.type_name || 'Annual Leave',
+          time_off_type_id: alloc.time_off_type_id,
+          allocated_days: 0,
+          taken_days: 0,
+          remaining_days: 0,
+          status: alloc.status,
+          employee_name: alloc.employee_name,
+        });
+      }
+      const item = map.get(key);
+      item.allocated_days += Number(alloc.allocated_days) || 0;
+      item.taken_days += Number(alloc.taken_days) || 0;
+      item.remaining_days = Math.max(0, item.allocated_days - item.taken_days);
+      if (alloc.status === 'approved') {
+        item.status = 'approved';
+      }
+    });
+    return Array.from(map.values());
+  }, [allocations]);
+
   return (
     <AppLayout activeModule="time-off">
       <div className="page-container">
@@ -444,20 +472,20 @@ const TimeOffPage = () => {
         </div>
 
         {/* Leave Balances KPI Cards */}
-        {allocations.length > 0 && (
+        {displayBalanceCards.length > 0 && (
           <div style={{ marginBottom: '1.75rem' }}>
             <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.75rem' }}>
               {isAdminOrHr ? 'Overview of Active Leave Allocations' : 'My Leave Balances'}
             </h3>
             <div className="timeoff-balances-grid">
-              {allocations.slice(0, 4).map((alloc) => {
+              {displayBalanceCards.map((alloc) => {
                 const rem = alloc.remaining_days;
                 const total = alloc.allocated_days;
                 const pct = total > 0 ? Math.min(100, Math.max(0, Math.round(((total - rem) / total) * 100))) : 0;
                 const colorKey = getTypeColor(alloc.type_name);
 
                 return (
-                  <div key={alloc.id} className="timeoff-balance-card">
+                  <div key={alloc.id || alloc.type_name} className="timeoff-balance-card">
                     <div className="balance-card-head">
                       <span className="timeoff-type-label">
                         <span className={`timeoff-type-dot dot-${colorKey}`} />
