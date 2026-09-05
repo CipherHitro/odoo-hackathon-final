@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
@@ -46,10 +47,13 @@ const DEFAULT_DAYS = [
 ];
 
 const WorkingScheduleList = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
   const [schedules, setSchedules] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState('list'); // 'list' | 'calendar'
+  const [activeSubTab, setActiveSubTab] = useState(searchParams.get('tab') === 'calendar' ? 'calendar' : 'list');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -120,63 +124,97 @@ const WorkingScheduleList = () => {
   };
 
   const handleOpenCreate = () => {
-    setFormData({
-      id: null,
-      name: '',
-      company: 'My Company (San Francisco)',
-      days_per_week: 5,
-      hours_per_week: 40.0,
-      timezone: 'America/Los_Angeles',
-      is_active: true,
-      lines: [...DEFAULT_DAYS],
-    });
-    setIsFormOpen(true);
+    setSearchParams({ action: 'new' });
   };
 
-  const handleOpenEdit = async (schedule) => {
-    try {
-      const detailed = await getWorkingScheduleById(schedule.id);
-      const rawLines = detailed.schedule_lines || detailed.lines || [];
-      setFormData({
-        id: detailed.id,
-        name: detailed.name,
-        company: detailed.company || 'My Company (San Francisco)',
-        days_per_week: detailed.days_per_week || 5,
-        hours_per_week: detailed.hours_per_week || 40.0,
-        timezone: detailed.timezone || 'America/Los_Angeles',
-        is_active: detailed.is_active !== false,
-        lines: rawLines.length > 0 
-          ? rawLines.map(l => ({
-              day_of_week: (l.day_of_week || 'monday').toLowerCase(),
-              work_from: l.start_time || l.work_from || '09:00',
-              work_to: l.end_time || l.work_to || '17:00',
-              break_hours: l.break_hours ?? 1.0,
-            }))
-          : [...DEFAULT_DAYS],
-      });
-      setIsFormOpen(true);
-    } catch (err) {
-      const rawLines = schedule.schedule_lines || schedule.lines || [];
-      setFormData({
-        id: schedule.id,
-        name: schedule.name,
-        company: schedule.company || 'My Company (San Francisco)',
-        days_per_week: schedule.days_per_week || 5,
-        hours_per_week: schedule.hours_per_week || 40.0,
-        timezone: schedule.timezone || 'America/Los_Angeles',
-        is_active: schedule.is_active !== false,
-        lines: rawLines.length > 0 
-          ? rawLines.map(l => ({
-              day_of_week: (l.day_of_week || 'monday').toLowerCase(),
-              work_from: l.start_time || l.work_from || '09:00',
-              work_to: l.end_time || l.work_to || '17:00',
-              break_hours: l.break_hours ?? 1.0,
-            }))
-          : [...DEFAULT_DAYS],
-      });
-      setIsFormOpen(true);
+  const handleOpenEdit = (schedule) => {
+    setSearchParams({ edit: String(schedule.id) });
+  };
+
+  const handleBackToList = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams(activeSubTab === 'calendar' ? { tab: 'calendar' } : {});
     }
   };
+
+  const handleTabSwitch = (tab) => {
+    setActiveSubTab(tab);
+    if (tab === 'calendar') {
+      setSearchParams({ tab: 'calendar' });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    const action = searchParams.get('action');
+    const tab = searchParams.get('tab');
+
+    if (tab === 'calendar') {
+      setActiveSubTab('calendar');
+    } else {
+      setActiveSubTab('list');
+    }
+
+    if (action === 'new') {
+      setFormData({
+        id: null,
+        name: '',
+        company: 'My Company (San Francisco)',
+        days_per_week: 5,
+        hours_per_week: 40.0,
+        timezone: 'America/Los_Angeles',
+        is_active: true,
+        lines: [...DEFAULT_DAYS],
+      });
+      setIsFormOpen(true);
+    } else if (editId) {
+      getWorkingScheduleById(editId)
+        .then((detailed) => {
+          const rawLines = detailed.schedule_lines || detailed.lines || [];
+          setFormData({
+            id: detailed.id,
+            name: detailed.name,
+            company: detailed.company || 'My Company (San Francisco)',
+            days_per_week: detailed.days_per_week || 5,
+            hours_per_week: detailed.hours_per_week || 40.0,
+            timezone: detailed.timezone || 'America/Los_Angeles',
+            is_active: detailed.is_active !== false,
+            lines: rawLines.length > 0 
+              ? rawLines.map(l => ({
+                  day_of_week: (l.day_of_week || 'monday').toLowerCase(),
+                  work_from: l.start_time || l.work_from || '09:00',
+                  work_to: l.end_time || l.work_to || '17:00',
+                  break_hours: l.break_hours ?? 1.0,
+                }))
+              : [...DEFAULT_DAYS],
+          });
+          setIsFormOpen(true);
+        })
+        .catch(() => {
+          const found = schedules.find(s => String(s.id) === String(editId));
+          if (found) {
+            const rawLines = found.schedule_lines || found.lines || [];
+            setFormData({
+              id: found.id,
+              name: found.name,
+              company: found.company || 'My Company (San Francisco)',
+              days_per_week: found.days_per_week || 5,
+              hours_per_week: found.hours_per_week || 40.0,
+              timezone: found.timezone || 'America/Los_Angeles',
+              is_active: found.is_active !== false,
+              lines: rawLines.length > 0 ? rawLines : [...DEFAULT_DAYS],
+            });
+            setIsFormOpen(true);
+          }
+        });
+    } else {
+      setIsFormOpen(false);
+    }
+  }, [searchParams, schedules]);
 
   const calculateHours = (from, to, breakHours = 0) => {
     if (!from || !to) return 0;
@@ -246,7 +284,7 @@ const WorkingScheduleList = () => {
       }
 
       await loadData();
-      setIsFormOpen(false);
+      handleBackToList();
     } catch (err) {
       showNotice('error', err.message || 'Failed to save schedule');
     } finally {
@@ -290,7 +328,7 @@ const WorkingScheduleList = () => {
               <button 
                 type="button" 
                 className="btn btn-outline btn-sm"
-                onClick={() => setIsFormOpen(false)}
+                onClick={handleBackToList}
               >
                 <ArrowLeft size={14} style={{ marginRight: '6px' }} />
                 Back to list
@@ -487,7 +525,7 @@ const WorkingScheduleList = () => {
                   <button
                     type="button"
                     className="btn btn-outline"
-                    onClick={() => setIsFormOpen(false)}
+                    onClick={handleBackToList}
                   >
                     Cancel
                   </button>
@@ -523,7 +561,7 @@ const WorkingScheduleList = () => {
               <button
                 type="button"
                 className={`detail-tab-item ${activeSubTab === 'list' ? 'is-active' : ''}`}
-                onClick={() => setActiveSubTab('list')}
+                onClick={() => handleTabSwitch('list')}
               >
                 <ListIcon size={14} style={{ display: 'inline', marginRight: '6px' }} />
                 List View
@@ -531,7 +569,7 @@ const WorkingScheduleList = () => {
               <button
                 type="button"
                 className={`detail-tab-item ${activeSubTab === 'calendar' ? 'is-active' : ''}`}
-                onClick={() => setActiveSubTab('calendar')}
+                onClick={() => handleTabSwitch('calendar')}
               >
                 <Calendar size={14} style={{ display: 'inline', marginRight: '6px' }} />
                 Calendar View

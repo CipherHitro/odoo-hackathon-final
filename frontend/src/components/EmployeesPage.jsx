@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
@@ -21,12 +21,13 @@ import AppLayout from './AppLayout';
 import EmployeeCard from './employees/EmployeeCard';
 import EmployeeList from './employees/EmployeeList';
 import EmployeeDetail from './employees/EmployeeDetail';
-import { getEmployees, getDepartments, getWorkingSchedules } from '../api/employees';
+import { getEmployees, getEmployeeById, getDepartments, getWorkingSchedules } from '../api/employees';
 import { getCurrentUser } from '../api/auth';
 import { canManageEmployees } from '../utils/rbac';
 
 const EmployeesPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' | 'list'
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -63,6 +64,42 @@ const EmployeesPage = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleSelectEmployee = (emp) => {
+    if (emp === 'new') {
+      setSearchParams({ action: 'new' });
+    } else {
+      setSearchParams({ id: String(emp.id) });
+    }
+  };
+
+  const handleBackToDirectory = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  useEffect(() => {
+    const empId = searchParams.get('id');
+    const action = searchParams.get('action');
+
+    if (action === 'new') {
+      setSelectedEmployee('new');
+    } else if (empId) {
+      const found = employees.find(e => String(e.id) === String(empId));
+      if (found) {
+        setSelectedEmployee(found);
+      } else {
+        getEmployeeById(empId)
+          .then((emp) => setSelectedEmployee(emp))
+          .catch(() => setSelectedEmployee(null));
+      }
+    } else {
+      setSelectedEmployee(null);
+    }
+  }, [searchParams, employees]);
 
   const deptMap = Object.fromEntries(departments.map(d => [d.id, d.name]));
   const getDeptName = (deptId, fallback) => deptMap[deptId] || fallback || 'General';
@@ -109,6 +146,7 @@ const EmployeesPage = () => {
   const handleSavedEmployee = async () => {
     await loadData();
     showToast('Employee profile synchronized successfully.');
+    handleBackToDirectory();
   };
 
   const userRole = (currentUser?.role || '').toLowerCase();
@@ -682,7 +720,7 @@ const EmployeesPage = () => {
                 departments={departments}
                 schedules={schedules}
                 currentUser={currentUser}
-                onBack={() => setSelectedEmployee(null)}
+                onBack={handleBackToDirectory}
                 onSaved={handleSavedEmployee}
               />
             ) : (
@@ -703,7 +741,7 @@ const EmployeesPage = () => {
                       <button
                         type="button"
                         className="btn btn-primary"
-                        onClick={() => setSelectedEmployee('new')}
+                        onClick={() => handleSelectEmployee('new')}
                         id="btn-new-employee"
                       >
                         <Plus size={15} style={{ marginRight: '6px' }} />
@@ -776,7 +814,7 @@ const EmployeesPage = () => {
                       <button
                         type="button"
                         className="btn btn-primary"
-                        onClick={() => setSelectedEmployee('new')}
+                        onClick={() => handleSelectEmployee('new')}
                       >
                         <Plus size={14} style={{ marginRight: '6px' }} />
                         Add First Employee
@@ -790,7 +828,7 @@ const EmployeesPage = () => {
                         key={emp.id}
                         employee={emp}
                         departmentName={getDeptName(emp.department_id, emp.department_name)}
-                        onClick={(emp) => setSelectedEmployee(emp)}
+                        onClick={(emp) => handleSelectEmployee(emp)}
                       />
                     ))}
                   </div>
@@ -799,7 +837,7 @@ const EmployeesPage = () => {
                     <EmployeeList
                       employees={filteredEmployees}
                       departments={departments}
-                      onSelectEmployee={(emp) => setSelectedEmployee(emp)}
+                      onSelectEmployee={(emp) => handleSelectEmployee(emp)}
                     />
                   </div>
                 )}

@@ -13,6 +13,7 @@ import {
   Info
 } from 'lucide-react';
 import AppLayout from './AppLayout';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../api/auth';
 import { 
   getWidgetState, 
@@ -43,6 +44,8 @@ const AttendancePage = () => {
   const [selectedEmployeeFilter, setSelectedEmployeeFilter] = useState('');
 
   // Admin Manual Entry Modal
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
@@ -52,6 +55,18 @@ const AttendancePage = () => {
     check_out: '',
     notes: ''
   });
+
+  useEffect(() => {
+    setIsModalOpen(searchParams.get('modal') === 'manual');
+  }, [searchParams]);
+
+  const handleCloseModal = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const isAdminOrHr = user && ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_admin'].includes(user.role);
 
@@ -158,7 +173,7 @@ const AttendancePage = () => {
       });
 
       showToast('Attendance record created successfully!');
-      setIsModalOpen(false);
+      handleCloseModal();
       setFormData({
         employee_id: employees.length > 0 ? employees[0].id : '',
         check_in: '',
@@ -244,7 +259,7 @@ const AttendancePage = () => {
                 className="btn-coral"
                 onClick={() => {
                   setFormError(null);
-                  setIsModalOpen(true);
+                  setSearchParams({ modal: 'manual' });
                 }}
                 id="btn-manual-attendance"
               >
@@ -492,14 +507,14 @@ const AttendancePage = () => {
 
       {/* Manual Entry Modal per 03-attendance.md §Attendance — Form */}
       {isModalOpen && (
-        <div className="daybook-modal-backdrop" onClick={() => setIsModalOpen(false)}>
+        <div className="daybook-modal-backdrop" onClick={handleCloseModal}>
           <div className="daybook-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="daybook-modal-header">
               <h2 className="daybook-modal-title">Manual Attendance Entry</h2>
               <button 
                 type="button" 
                 className="daybook-modal-close"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleCloseModal}
               >
                 <X size={18} />
               </button>
@@ -569,7 +584,7 @@ const AttendancePage = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                 >
                   Cancel
                 </button>

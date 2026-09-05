@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
@@ -12,7 +13,7 @@ import {
 import AppLayout from '../AppLayout';
 import ContractList from './ContractList';
 import ContractDetail from './ContractDetail';
-import { getContracts, getSalaryStructures } from '../../api/contracts';
+import { getContracts, getContractById, getSalaryStructures } from '../../api/contracts';
 import { getEmployees, getDepartments, getWorkingSchedules } from '../../api/employees';
 import { getCurrentUser } from '../../api/auth';
 import { canManageContracts, canEditContracts } from '../../utils/rbac';
@@ -31,6 +32,9 @@ const ContractsPage = () => {
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // When selectedContract is non-null, display ContractDetail
   // When selectedContract === 'new', open in Create mode
@@ -71,6 +75,42 @@ const ContractsPage = () => {
     loadData();
   }, []);
 
+  const handleSelectContract = (contract) => {
+    if (contract === 'new') {
+      setSearchParams({ action: 'new' });
+    } else {
+      setSearchParams({ id: String(contract.id) });
+    }
+  };
+
+  const handleBackToContracts = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  useEffect(() => {
+    const contractId = searchParams.get('id');
+    const action = searchParams.get('action');
+
+    if (action === 'new') {
+      setSelectedContract('new');
+    } else if (contractId) {
+      const found = contracts.find(c => String(c.id) === String(contractId));
+      if (found) {
+        setSelectedContract(found);
+      } else {
+        getContractById(contractId)
+          .then(c => setSelectedContract(c))
+          .catch(() => setSelectedContract(null));
+      }
+    } else {
+      setSelectedContract(null);
+    }
+  }, [searchParams, contracts]);
+
   const showToast = (msg) => {
     setSuccessToast(msg);
     setTimeout(() => setSuccessToast(null), 3500);
@@ -79,12 +119,13 @@ const ContractsPage = () => {
   const handleContractSaved = async (saved) => {
     await loadData();
     showToast(`Contract ${saved.reference || ''} saved successfully.`);
+    handleBackToContracts();
   };
 
   const handleContractDeleted = async (deletedId) => {
     setContracts(prev => prev.filter(c => c.id !== deletedId));
-    setSelectedContract(null);
     showToast('Contract deleted successfully.');
+    handleBackToContracts();
   };
 
   const isAuthorized = canManageContracts(currentUser);
@@ -148,7 +189,7 @@ const ContractsPage = () => {
             schedules={schedules}
             structures={structures}
             currentUser={currentUser}
-            onBack={() => setSelectedContract(null)}
+            onBack={handleBackToContracts}
             onSaved={handleContractSaved}
             onDeleted={handleContractDeleted}
           />
@@ -168,7 +209,7 @@ const ContractsPage = () => {
                   <button
                     type="button"
                     className="btn btn-primary"
-                    onClick={() => setSelectedContract('new')}
+                    onClick={() => handleSelectContract('new')}
                     id="btn-new-contract"
                   >
                     <Plus size={15} style={{ marginRight: '6px' }} />
@@ -201,7 +242,7 @@ const ContractsPage = () => {
                 )}
               </div>
 
-              {/* Status Filter Selector */}
+            {/* Status Filter Selector */}
               <div className="role-filter-group">
                 <Filter size={14} style={{ color: 'var(--text-secondary)', marginRight: '6px' }} />
                 <select
@@ -236,7 +277,7 @@ const ContractsPage = () => {
                   <button
                     type="button"
                     className="btn btn-primary"
-                    onClick={() => setSelectedContract('new')}
+                    onClick={() => handleSelectContract('new')}
                   >
                     <Plus size={14} style={{ marginRight: '6px' }} />
                     Draft First Contract
@@ -247,7 +288,7 @@ const ContractsPage = () => {
               <div style={{ marginTop: '16px' }}>
                 <ContractList
                   contracts={filteredContracts}
-                  onSelectContract={(contract) => setSelectedContract(contract)}
+                  onSelectContract={(contract) => handleSelectContract(contract)}
                 />
               </div>
             )}

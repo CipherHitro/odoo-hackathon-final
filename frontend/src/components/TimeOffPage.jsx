@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -55,11 +55,21 @@ const TimeOffPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // Route Synchronization for tabs
   const getTabFromPath = () => {
     if (location.pathname.includes('/allocations')) return 'allocations';
     if (location.pathname.includes('/types')) return 'types';
     return 'requests';
+  };
+
+  const handleCloseModal = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromPath());
@@ -84,6 +94,13 @@ const TimeOffPage = () => {
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
+
+  useEffect(() => {
+    const modalParam = searchParams.get('modal');
+    setIsRequestModalOpen(modalParam === 'request');
+    setIsAllocModalOpen(modalParam === 'allocation');
+    setIsTypeModalOpen(modalParam === 'type');
+  }, [searchParams]);
 
   // Form states
   const [requestForm, setRequestForm] = useState({
@@ -196,7 +213,7 @@ const TimeOffPage = () => {
 
       await createTimeOffRequest(payload);
       showToast('Time off request submitted successfully!');
-      setIsRequestModalOpen(false);
+      handleCloseModal();
       setRequestForm({
         employee_id: '',
         time_off_type_id: types.length > 0 ? types[0].id : '',
@@ -259,7 +276,7 @@ const TimeOffPage = () => {
       });
 
       showToast('Leave allocation created successfully!');
-      setIsAllocModalOpen(false);
+      handleCloseModal();
       setAllocForm({
         employee_id: employees.length > 0 ? employees[0].id : '',
         time_off_type_id: types.length > 0 ? types[0].id : '',
@@ -316,7 +333,7 @@ const TimeOffPage = () => {
       });
 
       showToast(`Leave type "${typeForm.name}" created!`);
-      setIsTypeModalOpen(false);
+      handleCloseModal();
       setTypeForm({
         name: '',
         unit: 'days',
@@ -429,7 +446,7 @@ const TimeOffPage = () => {
             <button
               type="button"
               className="btn-coral"
-              onClick={() => { setFormError(null); setIsRequestModalOpen(true); }}
+              onClick={() => { setFormError(null); setSearchParams({ modal: 'request' }); }}
               id="btn-request-time-off"
             >
               <Plus size={16} />
@@ -441,7 +458,7 @@ const TimeOffPage = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => { setFormError(null); setIsAllocModalOpen(true); }}
+                  onClick={() => { setFormError(null); setSearchParams({ modal: 'allocation' }); }}
                   id="btn-new-allocation"
                 >
                   <Plus size={16} />
@@ -451,7 +468,7 @@ const TimeOffPage = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => { setFormError(null); setIsTypeModalOpen(true); }}
+                  onClick={() => { setFormError(null); setSearchParams({ modal: 'type' }); }}
                   id="btn-new-leave-type"
                 >
                   <Plus size={16} />
@@ -930,14 +947,14 @@ const TimeOffPage = () => {
           MODAL 1: REQUEST TIME OFF
           ========================================================================= */}
       {isRequestModalOpen && (
-        <div className="daybook-modal-backdrop" onClick={() => setIsRequestModalOpen(false)}>
+        <div className="daybook-modal-backdrop" onClick={handleCloseModal}>
           <div className="daybook-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="daybook-modal-header">
               <h2 className="daybook-modal-title">Request Time Off</h2>
               <button
                 type="button"
                 className="daybook-modal-close"
-                onClick={() => setIsRequestModalOpen(false)}
+                onClick={handleCloseModal}
               >
                 <X size={18} />
               </button>
@@ -1026,7 +1043,7 @@ const TimeOffPage = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => setIsRequestModalOpen(false)}
+                  onClick={handleCloseModal}
                 >
                   Cancel
                 </button>
@@ -1047,14 +1064,14 @@ const TimeOffPage = () => {
           MODAL 2: ALLOCATE LEAVE (HR/ADMIN)
           ========================================================================= */}
       {isAllocModalOpen && (
-        <div className="daybook-modal-backdrop" onClick={() => setIsAllocModalOpen(false)}>
+        <div className="daybook-modal-backdrop" onClick={handleCloseModal}>
           <div className="daybook-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="daybook-modal-header">
               <h2 className="daybook-modal-title">Allocate Leave to Employee</h2>
               <button
                 type="button"
                 className="daybook-modal-close"
-                onClick={() => setIsAllocModalOpen(false)}
+                onClick={handleCloseModal}
               >
                 <X size={18} />
               </button>
@@ -1146,7 +1163,7 @@ const TimeOffPage = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => setIsAllocModalOpen(false)}
+                  onClick={handleCloseModal}
                 >
                   Cancel
                 </button>
@@ -1167,14 +1184,14 @@ const TimeOffPage = () => {
           MODAL 3: CREATE LEAVE TYPE (HR/ADMIN) per 04-timeoff.md §Screen: Time Off Type — Form
           ========================================================================= */}
       {isTypeModalOpen && (
-        <div className="daybook-modal-backdrop" onClick={() => setIsTypeModalOpen(false)}>
+        <div className="daybook-modal-backdrop" onClick={handleCloseModal}>
           <div className="daybook-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="daybook-modal-header">
               <h2 className="daybook-modal-title">Create Leave Type</h2>
               <button
                 type="button"
                 className="daybook-modal-close"
-                onClick={() => setIsTypeModalOpen(false)}
+                onClick={handleCloseModal}
               >
                 <X size={18} />
               </button>
@@ -1267,7 +1284,7 @@ const TimeOffPage = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => setIsTypeModalOpen(false)}
+                  onClick={handleCloseModal}
                 >
                   Cancel
                 </button>

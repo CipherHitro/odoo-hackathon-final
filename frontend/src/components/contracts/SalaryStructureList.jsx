@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
@@ -16,6 +17,9 @@ import { getCurrentUser } from '../../api/auth';
 import { canViewSalaryStructures, canEditSalaryStructures } from '../../utils/rbac';
 
 const SalaryStructureList = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
   const [structures, setStructures] = useState([]);
   const [selectedStructure, setSelectedStructure] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,14 +48,31 @@ const SalaryStructureList = () => {
     loadData();
   }, []);
 
-  const handleSelectStructure = async (structure) => {
-    try {
-      const detailed = await getSalaryStructureById(structure.id);
-      setSelectedStructure(detailed);
-    } catch (err) {
-      setSelectedStructure(structure);
+  const handleSelectStructure = (structure) => {
+    setSearchParams({ id: String(structure.id) });
+  };
+
+  const handleBackToList = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
     }
   };
+
+  useEffect(() => {
+    const structId = searchParams.get('id');
+    if (structId) {
+      getSalaryStructureById(structId)
+        .then((detailed) => setSelectedStructure(detailed))
+        .catch(() => {
+          const found = structures.find(s => String(s.id) === String(structId));
+          setSelectedStructure(found || null);
+        });
+    } else {
+      setSelectedStructure(null);
+    }
+  }, [searchParams, structures]);
 
   const filteredStructures = structures.filter(s =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -90,7 +111,7 @@ const SalaryStructureList = () => {
               <button
                 type="button"
                 className="btn btn-outline btn-sm"
-                onClick={() => setSelectedStructure(null)}
+                onClick={handleBackToList}
               >
                 <ArrowLeft size={14} style={{ marginRight: '6px' }} />
                 Back to structures

@@ -13,6 +13,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import AppLayout from '../AppLayout';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { listUsers, registerUser, updateUser, getCurrentUser } from '../../api/auth';
 import { getEmployees } from '../../api/employees';
 import { UserRole, getDepartmentColor, canManageUsers } from '../../utils/rbac';
@@ -26,6 +27,8 @@ const ROLE_OPTIONS = [
 ];
 
 const UserManagement = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -80,40 +83,61 @@ const UserManagement = () => {
   };
 
   const handleOpenCreate = () => {
-    setSelectedUser(null);
-    setFormData({
-      id: null,
-      name: '',
-      email: '',
-      password: 'Password123!',
-      role: UserRole.EMPLOYEE,
-      status: 'active',
-      is_active: true,
-      employee_id: '',
-    });
-    setIsPanelOpen(true);
+    setSearchParams({ action: 'new' });
   };
 
   const handleSelectRow = (user) => {
-    setSelectedUser(user);
-    const linkedEmp = employees.find(e => e.user_id === user.id || e.work_email === user.email);
-    const userStatus = user.status || linkedEmp?.status || (user.is_active ? 'active' : 'inactive');
-    setFormData({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      password: '',
-      role: user.role,
-      status: userStatus,
-      is_active: userStatus === 'active',
-      employee_id: linkedEmp ? String(linkedEmp.id) : '',
-    });
-    setIsPanelOpen(true);
+    setSearchParams({ edit: String(user.id) });
   };
 
   const handleClosePanel = () => {
-    setIsPanelOpen(false);
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
   };
+
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const editId = searchParams.get('edit');
+
+    if (action === 'new') {
+      setSelectedUser(null);
+      setFormData({
+        id: null,
+        name: '',
+        email: '',
+        password: 'Password123!',
+        role: UserRole.EMPLOYEE,
+        status: 'active',
+        is_active: true,
+        employee_id: '',
+      });
+      setIsPanelOpen(true);
+    } else if (editId) {
+      const found = users.find(u => String(u.id) === String(editId));
+      if (found) {
+        setSelectedUser(found);
+        const linkedEmp = employees.find(e => e.user_id === found.id || e.work_email === found.email);
+        const userStatus = found.status || linkedEmp?.status || (found.is_active ? 'active' : 'inactive');
+        setFormData({
+          id: found.id,
+          name: found.name,
+          email: found.email,
+          password: '',
+          role: found.role,
+          status: userStatus,
+          is_active: userStatus === 'active',
+          employee_id: linkedEmp ? String(linkedEmp.id) : '',
+        });
+        setIsPanelOpen(true);
+      }
+    } else {
+      setIsPanelOpen(false);
+      setSelectedUser(null);
+    }
+  }, [searchParams, users, employees]);
 
   const handleEmployeeSelectChange = (e) => {
     const empId = e.target.value;
@@ -170,7 +194,7 @@ const UserManagement = () => {
         showNotice('success', `User "${newUser.name}" created successfully.`);
         fetchData();
       }
-      setIsPanelOpen(false);
+      handleClosePanel();
     } catch (err) {
       showNotice('error', err.message || 'Operation failed');
     } finally {

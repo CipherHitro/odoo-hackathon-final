@@ -11,6 +11,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import AppLayout from '../AppLayout';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getDepartments, getEmployees, createDepartment, updateDepartment } from '../../api/employees';
 import { getCurrentUser } from '../../api/auth';
 import { canManageDepartments, canViewDepartments, getDepartmentColor } from '../../utils/rbac';
@@ -24,6 +25,8 @@ const TOKEN_PALETTE = [
 ];
 
 const DepartmentList = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [departments, setDepartments] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -72,29 +75,54 @@ const DepartmentList = () => {
 
   const handleOpenCreate = () => {
     if (!canManage) return;
-    setSelectedDept(null);
-    setFormData({
-      id: null,
-      name: '',
-      manager_id: '',
-      parent_department_id: '',
-      color: 'var(--sky)',
-    });
-    setIsDrawerOpen(true);
+    setSearchParams({ action: 'new' });
   };
 
   const handleSelectDept = (dept) => {
     if (!canManage) return;
-    setSelectedDept(dept);
-    setFormData({
-      id: dept.id,
-      name: dept.name,
-      manager_id: dept.manager_id ? String(dept.manager_id) : '',
-      parent_department_id: dept.parent_department_id ? String(dept.parent_department_id) : '',
-      color: getDepartmentColor(dept.name),
-    });
-    setIsDrawerOpen(true);
+    setSearchParams({ edit: String(dept.id) });
   };
+
+  const handleCloseDrawer = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const editId = searchParams.get('edit');
+
+    if (action === 'new') {
+      setSelectedDept(null);
+      setFormData({
+        id: null,
+        name: '',
+        manager_id: '',
+        parent_department_id: '',
+        color: 'var(--sky)',
+      });
+      setIsDrawerOpen(true);
+    } else if (editId) {
+      const found = departments.find(d => String(d.id) === String(editId));
+      if (found) {
+        setSelectedDept(found);
+        setFormData({
+          id: found.id,
+          name: found.name,
+          manager_id: found.manager_id ? String(found.manager_id) : '',
+          parent_department_id: found.parent_department_id ? String(found.parent_department_id) : '',
+          color: getDepartmentColor(found.name),
+        });
+        setIsDrawerOpen(true);
+      }
+    } else {
+      setIsDrawerOpen(false);
+      setSelectedDept(null);
+    }
+  }, [searchParams, departments]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -116,7 +144,7 @@ const DepartmentList = () => {
         setDepartments(prev => [...prev, created]);
         showNotice('success', `Department "${created.name}" created.`);
       }
-      setIsDrawerOpen(false);
+      handleCloseDrawer();
     } catch (err) {
       showNotice('error', err.message || 'Operation failed');
     } finally {
@@ -279,7 +307,7 @@ const DepartmentList = () => {
 
       {/* Create / Edit Drawer */}
       {isDrawerOpen && (
-        <div className="drawer-overlay" onClick={() => setIsDrawerOpen(false)}>
+        <div className="drawer-overlay" onClick={handleCloseDrawer}>
           <div className="drawer-content" onClick={(e) => e.stopPropagation()}>
             <div className="drawer-header">
               <div>
@@ -291,7 +319,7 @@ const DepartmentList = () => {
               <button 
                 type="button" 
                 className="btn-icon" 
-                onClick={() => setIsDrawerOpen(false)}
+                onClick={handleCloseDrawer}
               >
                 <X size={18} />
               </button>
