@@ -4,6 +4,7 @@ from app.api.users.redis_repository import RedisRepository
 from app.api.users.repository import UserRepository
 from app.core.config import settings
 from app.core.exceptions import (
+    InactiveUserError,
     InvalidCredentialsError,
     InvalidOTPError,
     InvalidResetTokenError,
@@ -19,7 +20,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import UserLogin, UserRegister
 from app.services.email.service import send_password_reset_otp
 
@@ -40,6 +41,13 @@ class UserService:
         if existing_user:
             raise UserAlreadyExistsError("Email is already registered")
 
+        # First user or system without admin gets the ADMIN role
+        has_admin = await UserRepository.has_admin(db)
+        if not has_admin:
+            role = UserRole.ADMIN.value
+        else:
+            role = data.role.value if isinstance(data.role, UserRole) else str(data.role)
+
         password_hash = hash_password(
             data.password
         )
@@ -49,6 +57,8 @@ class UserService:
             name=data.name,
             email=data.email,
             password_hash=password_hash,
+            role=role,
+            is_active=data.is_active,
         )
 
     @staticmethod
@@ -67,6 +77,9 @@ class UserService:
             user.password_hash,
         ):
             raise InvalidCredentialsError("Invalid email or password")
+
+        if not user.is_active:
+            raise InactiveUserError("Account is inactive. Please contact your administrator.")
 
         return user
 

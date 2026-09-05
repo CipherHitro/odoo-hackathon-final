@@ -5,6 +5,7 @@ from app.api.users.service import PasswordResetService, UserService
 from app.core.config import settings
 from app.core.cookies import set_auth_cookie
 from app.core.exceptions import (
+    InactiveUserError,
     InvalidCredentialsError,
     InvalidOTPError,
     InvalidResetTokenError,
@@ -13,6 +14,7 @@ from app.core.exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
 )
+from app.models.user import User
 from app.schemas.user import (
     AuthResponse,
     ForgotPasswordRequest,
@@ -32,7 +34,7 @@ class UserController:
     async def register(
         db: AsyncSession,
         data: UserRegister,
-        response: Response,
+        current_admin: User | None = None,
     ) -> AuthResponse:
 
         try:
@@ -44,11 +46,14 @@ class UserController:
                 detail=str(exc),
             ) from exc
 
-        token = UserService.issue_token(user)
-        set_auth_cookie(response, token)
+        message = (
+            "Admin registered successfully"
+            if current_admin is None
+            else "User created successfully"
+        )
 
         return AuthResponse(
-            message="User registered successfully",
+            message=message,
             user=UserResponse.model_validate(user),
         )
 
@@ -64,6 +69,11 @@ class UserController:
         except InvalidCredentialsError as exc:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=str(exc),
+            ) from exc
+        except InactiveUserError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail=str(exc),
             ) from exc
 

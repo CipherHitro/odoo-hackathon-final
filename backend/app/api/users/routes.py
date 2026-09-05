@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_admin_or_bootstrap, get_current_user
 from app.api.users.controller import UserController
 from app.core.cookies import clear_auth_cookie
 from app.core.database import get_db
@@ -32,14 +32,14 @@ router = APIRouter(
 )
 async def register(
     data: UserRegister,
-    response: Response,
     db: AsyncSession = Depends(get_db),
+    current_admin: User | None = Depends(get_current_admin_or_bootstrap),
 ):
 
     return await UserController.register(
         db,
         data,
-        response,
+        current_admin=current_admin,
     )
 
 

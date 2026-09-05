@@ -46,4 +46,32 @@ async def get_current_user(
             detail="User not found",
         )
 
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is inactive",
+        )
+
     return user
+
+
+async def get_current_admin_or_bootstrap(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """FastAPI dependency for user registration:
+    - If no admin exists in the system (bootstrap phase), allows registration without auth (returns None).
+    - Otherwise, requires an authenticated user with ADMIN role.
+    """
+    has_admin = await UserRepository.has_admin(db)
+    if not has_admin:
+        return None
+
+    current_user = await get_current_user(request, db)
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can register users",
+        )
+
+    return current_user

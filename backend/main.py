@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.core.redis import redis_client
 
-from app.api.users.routes import router as users_router
+from app.api import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,7 +20,7 @@ app = FastAPI(
 )
 
 
-app.include_router(users_router)
+app.include_router(api_router)
 
 
 @app.get("/")

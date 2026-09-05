@@ -28,3 +28,7 @@ class OTPAttemptsExceededError(AppError):
 
 class InvalidResetTokenError(AppError):
     """Raised when the password reset token is invalid, expired or already used."""
+
+
+class InactiveUserError(AppError):
+    """Raised when a user account is inactive."""

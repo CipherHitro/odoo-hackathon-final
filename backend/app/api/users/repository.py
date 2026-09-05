@@ -1,7 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 class UserRepository:
@@ -31,17 +31,33 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def count(db: AsyncSession) -> int:
+        result = await db.execute(select(func.count(User.id)))
+        return result.scalar() or 0
+
+    @staticmethod
+    async def has_admin(db: AsyncSession) -> bool:
+        result = await db.execute(
+            select(func.count(User.id)).where(User.role == UserRole.ADMIN.value)
+        )
+        return (result.scalar() or 0) > 0
+
+    @staticmethod
     async def create(
         db: AsyncSession,
         name: str,
         email: str,
         password_hash: str,
+        role: str = UserRole.EMPLOYEE.value,
+        is_active: bool = True,
     ) -> User:
 
         user = User(
             name=name,
             email=email,
             password_hash=password_hash,
+            role=role,
+            is_active=is_active,
         )
 
         db.add(user)
