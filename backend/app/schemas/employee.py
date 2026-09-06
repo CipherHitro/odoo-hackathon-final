@@ -38,6 +38,7 @@ class EmployeeUpdate(BaseModel):
 
 class EmployeeResponse(EmployeeBase):
     id: int
+    department_name: Optional[str] = None
     
     # Smart button counts
     contracts_count: int = 0

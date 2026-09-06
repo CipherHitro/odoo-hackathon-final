@@ -12,6 +12,7 @@ class EmployeeRepository:
     async def get_all(db: AsyncSession) -> List[Employee]:
         result = await db.execute(
             select(Employee).options(
+                selectinload(Employee.department),
                 selectinload(Employee.contracts),
                 selectinload(Employee.attendance_records),
                 selectinload(Employee.time_off_requests),
@@ -25,6 +26,7 @@ class EmployeeRepository:
             select(Employee)
             .where(Employee.id == employee_id)
             .options(
+                selectinload(Employee.department),
                 selectinload(Employee.contracts),
                 selectinload(Employee.attendance_records),
                 selectinload(Employee.time_off_requests),

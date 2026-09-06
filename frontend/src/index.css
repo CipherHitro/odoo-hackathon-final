@@ -2444,3 +2444,199 @@ select:disabled {
   color: var(--text-secondary);
   border: 1px solid var(--border);
 }
+
+/* ═══════════════════════════════════════════════
+   PAYROLL DASHBOARD — Rich Filter Pills & Widgets
+   ═══════════════════════════════════════════════ */
+
+.dashboard-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.dashboard-filter-pill-wrap {
+  display: inline-flex;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 4px 12px 4px 10px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dashboard-filter-pill-wrap:focus-within,
+.dashboard-filter-pill-wrap:hover {
+  border-color: var(--border-hover, #cbd5e1);
+}
+
+.dashboard-filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-right: 6px;
+}
+
+.dashboard-filter-select {
+  background: transparent;
+  border: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  padding-right: 4px;
+  outline: none;
+}
+
+.dashboard-filter-select option {
+  color: var(--ink);
+  background: #fff;
+}
+
+/* Status Split Segmented Bar */
+.dashboard-segmented-track {
+  display: flex;
+  height: 14px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--muted);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  margin-bottom: 12px;
+}
+
+.dashboard-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.dashboard-segment.seg-paid    { background: #22c55e; }
+.dashboard-segment.seg-done    { background: #38bdf8; }
+.dashboard-segment.seg-pending { background: #facc15; }
+.dashboard-segment.seg-warning { background: #f87171; }
+
+.dashboard-split-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.dashboard-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dashboard-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Alert List in Payslip Status Card */
+.dashboard-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-alert-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--r-sm);
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  transition: background 0.1s ease;
+}
+
+.dashboard-alert-row:hover {
+  background: var(--muted);
+}
+
+.dashboard-alert-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Attendance Divided Stat Header */
+.dashboard-divided-stat {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.dashboard-stat-col {
+  padding: 0 6px;
+}
+
+.dashboard-stat-col:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.dashboard-stat-num {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.dashboard-stat-lbl {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-top: 3px;
+}
+
+.dashboard-tally-bar {
+  height: 4px;
+  border-radius: 2px;
+  margin: 6px auto 0;
+  width: 70%;
+  background: var(--border);
+}
+
+/* Mini Tables */
+.dashboard-compact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.dashboard-compact-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-compact-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  color: var(--ink);
+}
+
+.dashboard-compact-table tr:last-child td {
+  border-bottom: none;
+}
+

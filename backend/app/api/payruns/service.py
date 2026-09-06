@@ -149,6 +149,8 @@ class PayrunService:
             raise ValueError(f"Can only pay VALIDATED payruns. Current status is {payrun.status}")
             
         payrun.status = PayrunStatus.PAID
+        for slip in (payrun.payslips or []):
+            slip.status = PayslipStatus.DONE
         await db.commit()
         return payrun
 

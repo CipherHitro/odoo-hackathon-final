@@ -16,15 +16,23 @@ class PayrollService:
     # --- Dashboard ---
     @staticmethod
     async def get_dashboard_metrics(db: AsyncSession) -> dict:
+        paid, pending = await DashboardRepository.get_paid_and_pending_counts(db)
         return {
             "total_payroll": await DashboardRepository.get_total_payroll(db),
             "average_salary": await DashboardRepository.get_average_salary(db),
             "payslips_generated": await DashboardRepository.get_payslips_generated(db),
+            "paid_count": paid,
+            "pending_count": pending,
             "approved_time_off": await DashboardRepository.get_approved_time_off(db),
             "attendance_health": await DashboardRepository.get_attendance_health(db),
             "cost_by_department": await DashboardRepository.get_cost_by_department(db),
             "monthly_trend": await DashboardRepository.get_monthly_trend(db),
-            "missing_contracts": await DashboardRepository.get_missing_contracts(db)
+            "missing_contracts": await DashboardRepository.get_missing_contracts(db),
+            "status_split": await DashboardRepository.get_status_split(db),
+            "current_alerts": await DashboardRepository.get_current_alerts(db),
+            "attendance_overview": await DashboardRepository.get_attendance_overview(db),
+            "time_off_overview": await DashboardRepository.get_time_off_overview(db),
+            "department_overview": await DashboardRepository.get_department_overview(db),
         }
 
     # --- Salary Structure ---
