@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus, Search, ChevronDown, ChevronRight, X,
   AlertTriangle, CheckCircle2, AlertCircle, FileText, DollarSign,
   Layers, Settings, BarChart2, Zap, RefreshCw, Trash2, Eye, ArrowLeft, Edit2,
-  Mail, Calendar, Users, ShieldAlert, Check
+  Mail, Calendar, Users, ShieldAlert, Check, TrendingUp, TrendingDown
 } from 'lucide-react';
 import AppLayout from './AppLayout';
 import { getEmployees, getDepartments } from '../api/employees';
@@ -27,7 +27,7 @@ import {
 } from '../utils/rbac';
 import { getCurrentUser } from '../api/auth';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid,
 } from 'recharts';
 import SendPayslipsModal from './payroll/SendPayslipsModal';
@@ -37,6 +37,13 @@ import SendPayslipsModal from './payroll/SendPayslipsModal';
 const fmt = (n) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(n) || 0);
 const fmtNum = (n) => new Intl.NumberFormat('en-IN').format(Number(n) || 0);
+const fmtLakh = (n) => {
+  const val = Number(n) || 0;
+  if (val >= 10000000) return `₹ ${(val / 10000000).toFixed(1)}Cr`;
+  if (val >= 100000) return `₹ ${(val / 100000).toFixed(1)}L`;
+  if (val >= 1000) return `₹ ${(val / 1000).toFixed(0)}k`;
+  return fmt(val);
+};
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 const CATEGORIES = ['BASIC', 'ALLOWANCE', 'DEDUCTION', 'GROSS', 'NET'];
@@ -88,103 +95,513 @@ const TABS = [
 ];
 
 // ─── Dashboard Tab ────────────────────────────────────────────────────────────
-const KPICard = ({ label, value, qualifier, qualifierPositive }) => (
-  <div className='card' style={{ padding: '20px 24px', flex: 1, minWidth: 0 }}>
-    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>{label}</div>
-    <div className='font-display' style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.1 }}>{value}</div>
-    {qualifier && <div style={{ fontSize: 12, marginTop: 4, color: qualifierPositive ? 'var(--success)' : 'var(--text-secondary)', fontWeight: 500 }}>{qualifier}</div>}
+const KPICard = ({ label, value, qualifier, qualifierPositive, trendIcon: TrendIcon }) => (
+  <div className="card" style={{ padding: '18px 20px', flex: 1, minWidth: 0, position: 'relative', overflow: 'hidden' }}>
+    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, letterSpacing: '0.01em' }}>
+      {label}
+    </div>
+    <div className="font-display" style={{ fontSize: 26, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.15 }}>
+      {value}
+    </div>
+    {qualifier && (
+      <div style={{
+        fontSize: 12,
+        marginTop: 6,
+        color: qualifierPositive ? 'var(--success)' : 'var(--text-secondary)',
+        fontWeight: 500,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4
+      }}>
+        {TrendIcon && <TrendIcon size={13} />}
+        <span>{qualifier}</span>
+      </div>
+    )}
   </div>
 );
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
-    return <div style={{ background: 'var(--ink)', color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 13, fontWeight: 600 }}>{fmt(payload[0].value)}</div>;
+    return (
+      <div style={{ background: 'var(--ink)', color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 13, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+        {fmt(payload[0].value)}
+      </div>
+    );
   }
   return null;
 };
 
-const DashboardTab = ({ data, loading, error }) => {
-  if (loading) return <div className='page-loading-state'><RefreshCw size={24} className='spin' /><span>Loading dashboard data…</span></div>;
-  if (error) return (
-    <div className="alert-box alert-box-danger" style={{ marginBottom: '1.25rem' }}>
-      <AlertCircle size={16} />
-      <span>{error}</span>
-    </div>
+// Custom Bar Label for Salary Cost by Department
+const renderCustomBarLabel = ({ x, y, width, value }) => {
+  if (!value) return null;
+  const label = fmtLakh(value);
+  return (
+    <text
+      x={x + width / 2}
+      y={y - 8}
+      fill="var(--text-secondary)"
+      textAnchor="middle"
+      fontSize={10.5}
+      fontFamily="var(--font-mono, monospace)"
+      fontWeight={600}
+    >
+      {label}
+    </text>
   );
-  if (!data) return (
-    <div className='card' style={{ padding: 48, textAlign: 'center', background: 'var(--muted)', backgroundImage: 'radial-gradient(var(--border) 1px, transparent 1px)', backgroundSize: '18px 18px' }}>
-      <div className='font-display' style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Run your first payroll</div>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>No payroll data yet. Create a payrun to see metrics here.</p>
-    </div>
-  );
+};
 
-  const trend = (data.monthly_trend || []).map((m) => ({ month: m.month, value: Number(m.total_net) }));
-  const deptData = (data.cost_by_department || []).map((d) => ({ name: d.department_name, value: Number(d.total_cost) }));
-  const peakValue = trend.length ? Math.max(...trend.map((t) => t.value)) : 0;
+const DashboardTab = ({ data, loading, error }) => {
+  if (loading) {
+    return (
+      <div className="page-loading-state">
+        <RefreshCw size={24} className="spin" />
+        <span>Loading dashboard data…</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert-box alert-box-danger" style={{ marginBottom: '1.25rem' }}>
+        <AlertCircle size={16} />
+        <span>{error}</span>
+      </div>
+    );
+  }
+
+  // 100% Real Database Metrics
+  const totalPayroll = Number(data?.total_payroll) || 0;
+  const payslipsGen = data?.payslips_generated || 0;
+  const paidCount = data?.paid_count != null ? data.paid_count : 0;
+  const pendingCount = data?.pending_count != null ? data.pending_count : 0;
+  const avgSalary = Number(data?.average_salary) || 0;
+  const timeOffDays = data?.approved_time_off || 0;
+  const attHealth = data?.attendance_health != null ? Math.round(Number(data.attendance_health)) : 0;
+
+  // Real MoM trend calculated from actual monthly_trend if at least 2 periods exist
+  const mList = data?.monthly_trend || [];
+  let momTrend = null;
+  if (mList.length >= 2) {
+    const lastVal = Number(mList[mList.length - 1].total_net) || 0;
+    const prevVal = Number(mList[mList.length - 2].total_net) || 0;
+    if (prevVal > 0) {
+      const pct = ((lastVal - prevVal) / prevVal) * 100;
+      momTrend = {
+        text: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% vs previous month`,
+        isPositive: pct >= 0,
+      };
+    }
+  }
+
+  // Real Monthly Trend
+  const trend = (data?.monthly_trend || []).map(m => ({
+    month: m.month,
+    value: Number(m.total_net) || 0,
+  }));
+  const peakValue = trend.length ? Math.max(...trend.map(t => t.value)) : 0;
+
+  // Real Department Cost
+  const deptData = (data?.cost_by_department || []).map(d => ({
+    name: d.department_name,
+    value: Number(d.total_cost) || 0,
+    color: getDepartmentColor(d.department_name),
+  }));
+
+  // Real Status Split
+  const statusSplit = data?.status_split || { paid: 0, done: 0, pending: 0, warning: 0 };
+  const splitTotal = (statusSplit.paid + statusSplit.done + statusSplit.pending + statusSplit.warning) || 0;
+  const paidPct = splitTotal > 0 ? Math.round((statusSplit.paid / splitTotal) * 100) : 0;
+  const donePct = splitTotal > 0 ? Math.round((statusSplit.done / splitTotal) * 100) : 0;
+  const pendingPct = splitTotal > 0 ? Math.round((statusSplit.pending / splitTotal) * 100) : 0;
+  const warnPct = splitTotal > 0 ? Math.max(0, 100 - paidPct - donePct - pendingPct) : 0;
+
+  // Real Alerts
+  const alerts = data?.current_alerts || [];
+
+  // Real Attendance Overview
+  const attStats = data?.attendance_overview || {
+    present: 0,
+    late: 0,
+    absent: 0,
+    overtime: 0,
+    missing_checkouts: 0,
+    manual_edits: 0,
+    attendance_coverage: 0,
+  };
+
+  // Real Time Off Overview
+  const timeOffOverview = (data?.time_off_overview || []).map(t => ({
+    ...t,
+    dotColor: t.type?.toLowerCase().includes('sick') ? 'var(--coral)' : (t.type?.toLowerCase().includes('comp') ? '#8b5cf6' : 'var(--sky)'),
+  }));
+
+  // Real Department Overview
+  const deptOverview = (data?.department_overview || []).map(d => ({
+    ...d,
+    dotColor: getDepartmentColor(d.department),
+  }));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', gap: 16 }}>
-        <KPICard label='Total Net Salary Paid'    value={fmt(data.total_payroll)}         qualifier='Current period' />
-        <KPICard label='Payslips Generated'        value={fmtNum(data.payslips_generated)} qualifier='This payrun' />
-        <KPICard label='Avg Salary / Employee'     value={fmt(data.average_salary)}        qualifier='Based on current payrun' />
-        <KPICard label='Approved Time Off Days'    value={`${data.approved_time_off || 0} Days`} qualifier='Across selected period' />
-        <KPICard label='Attendance Health'         value={`${Math.round((data.attendance_health || 0) * 100)}%`} qualifier='Present / reviewed records' qualifierPositive={(data.attendance_health || 0) >= 0.85} />
+      {/* Header & Subtitle per Mockup */}
+      <div className="page-header-row" style={{ marginBottom: 0 }}>
+        <div>
+          <h1 className="page-title font-display" style={{ fontSize: '1.5rem', marginBottom: 4 }}>
+            Payroll Dashboard
+          </h1>
+          <p className="page-subtitle" style={{ margin: 0, fontSize: '0.84rem' }}>
+            Dashboard should help payroll/HR users understand payments, staffing impact, leave patterns, and attendance quality for the selected period.
+          </p>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-        <div className='card' style={{ padding: '20px 24px' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Salary Cost by Department</div>
-          <ResponsiveContainer width='100%' height={200}>
-            <BarChart data={deptData} barSize={28}>
-              <XAxis dataKey='name' tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--muted)' }} />
-              <Bar dataKey='value' fill='var(--sky)' radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      {/* Row 1: Five Equal-Width KPI Cards (§06-dashboard.md) */}
+      <div style={{ display: 'flex', gap: 14 }}>
+        <KPICard
+          label="Total Net Salary Paid"
+          value={fmtLakh(totalPayroll)}
+          qualifier={momTrend ? momTrend.text : 'All recorded payruns'}
+          qualifierPositive={momTrend ? momTrend.isPositive : true}
+          trendIcon={momTrend ? (momTrend.isPositive ? TrendingUp : TrendingDown) : null}
+        />
+        <KPICard
+          label="Payslips Generated"
+          value={fmtNum(payslipsGen)}
+          qualifier={`${paidCount} paid, ${pendingCount} pending`}
+        />
+        <KPICard
+          label="Avg Salary / Employee"
+          value={fmt(avgSalary)}
+          qualifier="Based on current records"
+        />
+        <KPICard
+          label="Approved Time Off Days"
+          value={`${timeOffDays} Days`}
+          qualifier="Across all approved requests"
+        />
+        <KPICard
+          label="Attendance Health"
+          value={`${attHealth}%`}
+          qualifier="Present / active employees"
+          qualifierPositive={attHealth >= 80}
+        />
+      </div>
 
-        <div className='card' style={{ padding: '20px 24px' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Monthly Net Salary Trend</div>
-          <ResponsiveContainer width='100%' height={200}>
-            <LineChart data={trend}>
-              <CartesianGrid vertical={false} stroke='var(--border)' />
-              <XAxis dataKey='month' tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type='monotone' dataKey='value' stroke='var(--sky)' strokeWidth={1.5}
-                dot={(props) => {
-                  const isPeak = props.value === peakValue;
-                  return <circle key={props.index} cx={props.cx} cy={props.cy} r={isPeak ? 6 : 4}
-                    fill={isPeak ? 'var(--ink)' : 'var(--sky)'} stroke='white' strokeWidth={2} />;
-                }}
-                activeDot={{ r: 6, fill: 'var(--coral)' }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className='card' style={{ padding: '20px 24px' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Payslip Status</div>
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', paddingBottom: 14, marginBottom: 14 }}>
-            {[{ label: 'Total', count: data.payslips_generated || 0, color: 'var(--success)' },
-              { label: 'Missing Contract', count: data.missing_contracts || 0, color: 'var(--warning)' }].map((item, i, arr) => (
-              <div key={item.label} style={{ flex: 1, textAlign: 'center', borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none', padding: '0 10px' }}>
-                <div className='font-display' style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>{item.count}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{item.label}</div>
-                <div style={{ display: 'flex', gap: 2, justifyContent: 'center', marginTop: 5 }}>
-                  {[...Array(8)].map((_, j) => <div key={j} style={{ width: 3, height: 10, borderRadius: 2, background: j < Math.min(7, item.count) ? item.color : 'var(--border)' }} />)}
-                </div>
-              </div>
-            ))}
+      {/* Row 2: Middle Three Cards (Bar Chart + Trend Line + Status Split & Alerts) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1fr 1.05fr', gap: 16 }}>
+        {/* Card 1: Salary Cost by Department */}
+        <div className="card" style={{ padding: '18px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Salary Cost by Department</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>Source: Payslips + Employee Department</div>
+            </div>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Alerts</div>
-          {data.missing_contracts > 0
-            ? <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--warning)', flexShrink: 0 }} />
-                <span style={{ fontSize: 13 }}>{data.missing_contracts} employee(s) missing active contract</span>
+          {deptData.length === 0 ? (
+            <div style={{ height: 215, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
+              No department payroll cost recorded yet.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={215}>
+              <BarChart data={deptData} barSize={26} margin={{ top: 22, right: 10, left: 10, bottom: 5 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--muted)' }} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]} label={renderCustomBarLabel}>
+                  {deptData.map((d, i) => (
+                    <Cell key={i} fill={d.color || getDepartmentColor(d.name)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Card 2: Monthly Net Salary Trend */}
+        <div className="card" style={{ padding: '18px 20px', position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Monthly Net Salary Trend</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>Source: Historical Payslips / Payruns</div>
+            </div>
+            {peakValue > 0 && (
+              <div style={{
+                background: 'var(--ink)',
+                color: '#fff',
+                borderRadius: 6,
+                padding: '2px 8px',
+                fontSize: 11,
+                fontWeight: 700,
+                fontFamily: 'var(--font-mono, monospace)',
+              }}>
+                {fmtLakh(peakValue)}
               </div>
-            : <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No active alerts</div>}
+            )}
+          </div>
+
+          {trend.length === 0 ? (
+            <div style={{ height: 215, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
+              No historical payrun trend data recorded yet.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={215}>
+              <LineChart data={trend} margin={{ top: 18, right: 12, left: 12, bottom: 5 }}>
+                <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                <YAxis hide domain={['dataMin - 50000', 'dataMax + 100000']} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="var(--sky)"
+                  strokeWidth={2}
+                  dot={(props) => {
+                    const isPeak = props.value === peakValue && peakValue > 0;
+                    return (
+                      <circle
+                        key={props.index}
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={isPeak ? 5.5 : 3.5}
+                        fill={isPeak ? 'var(--ink)' : 'var(--sky)'}
+                        stroke="white"
+                        strokeWidth={2}
+                      />
+                    );
+                  }}
+                  activeDot={{ r: 6, fill: 'var(--coral)' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Card 3: Payslip Status & Payroll Alerts */}
+        <div className="card" style={{ padding: '18px 20px' }}>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Payslip Status & Payroll Alerts</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>Source: Payrun + Payslip validation</div>
+          </div>
+
+          {/* Top Half: Status split horizontal progress bar */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
+              Status split
+            </div>
+            {splitTotal === 0 ? (
+              <div style={{ height: 14, borderRadius: 9999, background: 'var(--muted)', marginBottom: 12 }} />
+            ) : (
+              <div className="dashboard-segmented-track">
+                {paidPct > 0 && <div className="dashboard-segment seg-paid" style={{ width: `${paidPct}%` }} title={`Paid: ${statusSplit.paid}`} />}
+                {donePct > 0 && <div className="dashboard-segment seg-done" style={{ width: `${donePct}%` }} title={`Done: ${statusSplit.done}`} />}
+                {pendingPct > 0 && <div className="dashboard-segment seg-pending" style={{ width: `${pendingPct}%` }} title={`Pending: ${statusSplit.pending}`} />}
+                {warnPct > 0 && <div className="dashboard-segment seg-warning" style={{ width: `${warnPct}%` }} title={`Warning: ${statusSplit.warning}`} />}
+              </div>
+            )}
+
+            <div className="dashboard-split-legend">
+              <span className="dashboard-legend-item">
+                <span className="dashboard-legend-dot" style={{ background: '#22c55e' }} />
+                <span>Paid ({statusSplit.paid})</span>
+              </span>
+              <span className="dashboard-legend-item">
+                <span className="dashboard-legend-dot" style={{ background: '#38bdf8' }} />
+                <span>Done ({statusSplit.done})</span>
+              </span>
+              <span className="dashboard-legend-item">
+                <span className="dashboard-legend-dot" style={{ background: '#facc15' }} />
+                <span>Pending ({statusSplit.pending})</span>
+              </span>
+              <span className="dashboard-legend-item">
+                <span className="dashboard-legend-dot" style={{ background: '#f87171' }} />
+                <span>Warning ({statusSplit.warning})</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Bottom Half: Current Alerts List */}
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
+              Current alerts
+            </div>
+            {alerts.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0' }}>
+                <CheckCircle2 size={15} />
+                <span>No active payroll alerts detected. All records healthy.</span>
+              </div>
+            ) : (
+              <div className="dashboard-alert-list">
+                {alerts.map((al, idx) => (
+                  <div key={idx} className="dashboard-alert-row">
+                    <span className="dashboard-alert-dot" style={{ background: al.color || '#ef4444' }} />
+                    <span style={{ fontSize: 12, lineHeight: 1.3 }}>{al.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Bottom Four Panels (Attendance, Time Off, Department, Models to Aggregate) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
+        {/* Panel 1: Attendance Overview */}
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Attendance Overview</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>Source: Attendance</div>
+          </div>
+
+          {/* Divided Stat Header */}
+          <div className="dashboard-divided-stat">
+            <div className="dashboard-stat-col">
+              <div className="dashboard-stat-num">{attStats.present}</div>
+              <div className="dashboard-stat-lbl">Present</div>
+              <div className="dashboard-tally-bar" style={{ background: '#38bdf8' }} />
+            </div>
+            <div className="dashboard-stat-col">
+              <div className="dashboard-stat-num">{attStats.late}</div>
+              <div className="dashboard-stat-lbl">Late</div>
+              <div className="dashboard-tally-bar" style={{ background: '#facc15' }} />
+            </div>
+            <div className="dashboard-stat-col">
+              <div className="dashboard-stat-num">{attStats.absent}</div>
+              <div className="dashboard-stat-lbl">Absent</div>
+              <div className="dashboard-tally-bar" style={{ background: '#f87171' }} />
+            </div>
+            <div className="dashboard-stat-col">
+              <div className="dashboard-stat-num">{attStats.overtime}</div>
+              <div className="dashboard-stat-lbl">Overtime</div>
+              <div className="dashboard-tally-bar" style={{ background: '#a855f7' }} />
+            </div>
+          </div>
+
+          {/* Side metrics list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Missing check-outs:</span>
+              <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{attStats.missing_checkouts}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Manual attendance edits:</span>
+              <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{attStats.manual_edits}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Attendance coverage:</span>
+              <strong style={{ color: attStats.attendance_coverage >= 80 ? 'var(--success)' : 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+                {attStats.attendance_coverage}%
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel 2: Time Off Overview */}
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Time Off Overview</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>Source: Time Off Requests + Allocations</div>
+          </div>
+
+          {timeOffOverview.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 12 }}>
+              No time off types or requests recorded.
+            </div>
+          ) : (
+            <table className="dashboard-compact-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th style={{ textAlign: 'right' }}>Approved</th>
+                  <th style={{ textAlign: 'right' }}>Pending</th>
+                  <th style={{ textAlign: 'right' }}>Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeOffOverview.map((row, idx) => (
+                  <tr key={idx}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: row.dotColor || 'var(--sky)' }} />
+                        <span style={{ fontWeight: 500 }}>{row.type}</span>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{row.approved_days}</td>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{row.pending}</td>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{row.remaining_balance}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Panel 3: Department Overview */}
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Department Overview</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>Source: Employee + Contract + Payslip totals</div>
+          </div>
+
+          {deptOverview.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 12 }}>
+              No department data recorded.
+            </div>
+          ) : (
+            <table className="dashboard-compact-table">
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th style={{ textAlign: 'right' }}>Headcount</th>
+                  <th style={{ textAlign: 'right' }}>Monthly Salary</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deptOverview.map((row, idx) => (
+                  <tr key={idx}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: row.dotColor || getDepartmentColor(row.department) }} />
+                        <span style={{ fontWeight: 600 }}>{row.department}</span>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{row.headcount}</td>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{fmtLakh(row.monthly_salary)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Panel 4: Models to Aggregate (Cross-module Challenge Card) */}
+        <div className="card" style={{ padding: '16px 18px', background: 'var(--card)' }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Models to Aggregate</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>This is the actual challenge behind the dashboard.</div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 11.5 }}>
+            <div style={{ lineHeight: 1.35 }}>
+              <strong style={{ color: 'var(--ink)' }}>• Employees / Departments</strong>
+              <div style={{ color: 'var(--text-secondary)', paddingLeft: 10 }}>headcount, ownership grouping</div>
+            </div>
+            <div style={{ lineHeight: 1.35 }}>
+              <strong style={{ color: 'var(--ink)' }}>• Contracts</strong>
+              <div style={{ color: 'var(--text-secondary)', paddingLeft: 10 }}>wage, schedule, active employees</div>
+            </div>
+            <div style={{ lineHeight: 1.35 }}>
+              <strong style={{ color: 'var(--ink)' }}>• Payruns / Payslips</strong>
+              <div style={{ color: 'var(--text-secondary)', paddingLeft: 10 }}>salary totals, paid vs pending, trend data</div>
+            </div>
+            <div style={{ lineHeight: 1.35 }}>
+              <strong style={{ color: 'var(--ink)' }}>• Attendance</strong>
+              <div style={{ color: 'var(--text-secondary)', paddingLeft: 10 }}>presence, absences, late entries, overtime</div>
+            </div>
+            <div style={{ lineHeight: 1.35 }}>
+              <strong style={{ color: 'var(--ink)' }}>• Time Off Requests / Allocations</strong>
+              <div style={{ color: 'var(--text-secondary)', paddingLeft: 10 }}>leave taken and leave balances</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -195,6 +612,7 @@ const DashboardTab = ({ data, loading, error }) => {
 const NewPayrunModal = ({ structures, onClose, onCreated }) => {
   const [step, setStep] = useState(1);
   const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [empSearch, setEmpSearch] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [loadingEmps, setLoadingEmps] = useState(false);
@@ -215,9 +633,14 @@ const NewPayrunModal = ({ structures, onClose, onCreated }) => {
     setFormError(null);
     setLoadingEmps(true);
     try {
-      const emps = await getEmployees();
+      const [emps, depts] = await Promise.all([
+        getEmployees(),
+        getDepartments().catch(() => []),
+      ]);
       const list = Array.isArray(emps) ? emps : emps.items || [];
+      const deptList = Array.isArray(depts) ? depts : depts.items || [];
       setEmployees(list);
+      setDepartments(deptList);
       setSelected(new Set(list.map((e) => e.id)));
     } catch {
       setEmployees([]);
@@ -250,15 +673,36 @@ const NewPayrunModal = ({ structures, onClose, onCreated }) => {
     return n;
   });
 
-  const filteredEmps = employees.filter((e) =>
-    !empSearch ||
-    e.name?.toLowerCase().includes(empSearch.toLowerCase()) ||
-    e.department_name?.toLowerCase().includes(empSearch.toLowerCase())
-  );
+  const deptMap = React.useMemo(() => {
+    const m = {};
+    (departments || []).forEach(d => { if (d?.id) m[d.id] = d.name; });
+    return m;
+  }, [departments]);
+
+  const filteredEmps = employees.filter((e) => {
+    if (!empSearch) return true;
+    const q = empSearch.toLowerCase();
+    const deptName = e.department_name || deptMap[e.department_id] || e.department?.name || '';
+    const email = e.work_email || e.email || '';
+    return (
+      e.name?.toLowerCase().includes(q) ||
+      email.toLowerCase().includes(q) ||
+      deptName.toLowerCase().includes(q) ||
+      e.job_position?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="daybook-modal-backdrop" onClick={onClose}>
-      <div className="daybook-modal-card" style={{ maxWidth: 580 }} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="daybook-modal-card"
+        style={{
+          maxWidth: step === 2 ? 860 : 580,
+          width: '100%',
+          transition: 'max-width 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="daybook-modal-header">
           <div>
             <h2 className="daybook-modal-title">New Pay Run</h2>
@@ -360,68 +804,149 @@ const NewPayrunModal = ({ structures, onClose, onCreated }) => {
 
           {step === 2 && (
             <div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-                <div className="search-pill-container" style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap' }}>
+                <div className="search-pill-container" style={{ flex: 1, minWidth: 260 }}>
                   <Search size={14} className="search-pill-icon" />
                   <input
                     type="text"
-                    placeholder="Search employees by name..."
+                    placeholder="Search by name, email, or department..."
                     value={empSearch}
                     onChange={(e) => setEmpSearch(e.target.value)}
                     className="search-pill-input"
                   />
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  onClick={() => selected.size === employees.length ? setSelected(new Set()) : setSelected(new Set(employees.map(e => e.id)))}
-                >
-                  {selected.size === employees.length ? 'Deselect All' : 'Select All'}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                    <strong style={{ color: 'var(--ink)' }}>{selected.size}</strong> of {employees.length} selected
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => {
+                      if (selected.size === employees.length) {
+                        setSelected(new Set());
+                      } else {
+                        setSelected(new Set(employees.map(e => e.id)));
+                      }
+                    }}
+                  >
+                    {selected.size === employees.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
               </div>
 
-              <div className="card table-card" style={{ maxHeight: 280, overflowY: 'auto' }}>
-                <table className="daybook-table">
-                  <thead>
+              <div className="card table-card" style={{ maxHeight: 420, overflowY: 'auto', border: '1px solid var(--border)' }}>
+                <table className="daybook-table" style={{ margin: 0, width: '100%' }}>
+                  <thead style={{ position: 'sticky', top: 0, background: 'var(--muted)', zIndex: 2 }}>
                     <tr>
-                      <th style={{ width: 36 }}></th>
-                      <th>Employee</th>
-                      <th>Department</th>
-                      <th style={{ textAlign: 'right' }}>Status</th>
+                      <th style={{ width: 44, textAlign: 'center', padding: '10px 12px' }}>
+                        <input
+                          type="checkbox"
+                          checked={filteredEmps.length > 0 && filteredEmps.every(e => selected.has(e.id))}
+                          onChange={() => {
+                            const allChecked = filteredEmps.every(e => selected.has(e.id));
+                            setSelected(prev => {
+                              const next = new Set(prev);
+                              filteredEmps.forEach(e => {
+                                if (allChecked) next.delete(e.id);
+                                else next.add(e.id);
+                              });
+                              return next;
+                            });
+                          }}
+                          style={{ accentColor: 'var(--coral)', width: 16, height: 16, cursor: 'pointer' }}
+                          title="Toggle all filtered"
+                        />
+                      </th>
+                      <th style={{ minWidth: 200, padding: '10px 14px' }}>Employee</th>
+                      <th style={{ minWidth: 200, padding: '10px 14px' }}>Email ID</th>
+                      <th style={{ minWidth: 160, padding: '10px 14px' }}>Department</th>
+                      <th style={{ width: 110, textAlign: 'right', padding: '10px 16px' }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEmps.map((e) => {
-                      const deptName = e.department_name || e.department?.name || 'General';
-                      const deptColor = getDepartmentColor(deptName);
-                      return (
-                        <tr key={e.id} onClick={() => toggleEmp(e.id)} style={{ cursor: 'pointer' }}>
-                          <td>
-                            <input
-                              type="checkbox"
-                              checked={selected.has(e.id)}
-                              onChange={() => toggleEmp(e.id)}
-                              onClick={(ev) => ev.stopPropagation()}
-                              style={{ accentColor: 'var(--coral)', width: 15, height: 15 }}
-                            />
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div className="dept-initials-chip-sm" style={{ backgroundColor: deptColor }}>
-                                {getInitials(e.name)}
+                    {filteredEmps.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: 36, color: 'var(--text-secondary)' }}>
+                          No employees match your search filter.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredEmps.map((e) => {
+                        const deptName = e.department_name || deptMap[e.department_id] || e.department?.name || 'General';
+                        const deptColor = getDepartmentColor(deptName);
+                        const email = e.work_email || e.email || '—';
+                        const isSelected = selected.has(e.id);
+
+                        return (
+                          <tr
+                            key={e.id}
+                            onClick={() => toggleEmp(e.id)}
+                            style={{
+                              cursor: 'pointer',
+                              background: isSelected ? 'rgba(239, 68, 68, 0.04)' : 'transparent',
+                              transition: 'background-color 0.12s ease',
+                            }}
+                          >
+                            <td style={{ textAlign: 'center', padding: '12px' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleEmp(e.id)}
+                                onClick={(ev) => ev.stopPropagation()}
+                                style={{ accentColor: 'var(--coral)', width: 16, height: 16, cursor: 'pointer' }}
+                              />
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div className="dept-initials-chip-sm" style={{ backgroundColor: deptColor, width: 34, height: 34, fontSize: 13, flexShrink: 0 }}>
+                                  {getInitials(e.name)}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ fontWeight: 600, color: 'var(--ink)', fontSize: '0.875rem' }}>
+                                    {e.name}
+                                  </div>
+                                  {e.job_position && (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 2 }}>
+                                      {e.job_position}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{e.name}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span style={{ color: deptColor, fontWeight: 500, fontSize: 13 }}>{deptName}</span>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <StatusPill status={e.status} />
-                          </td>
-                        </tr>
-                      );
-                    })}
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Mail size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                <span className="font-mono" style={{ color: 'var(--ink)', fontSize: '0.8125rem' }}>
+                                  {email}
+                                </span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  padding: '3px 10px',
+                                  borderRadius: 'var(--r-pill)',
+                                  backgroundColor: `color-mix(in srgb, ${deptColor} 12%, transparent)`,
+                                  color: deptColor,
+                                  fontWeight: 600,
+                                  fontSize: '0.78rem',
+                                }}
+                              >
+                                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: deptColor }} />
+                                {deptName}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'right', padding: '12px 16px' }}>
+                              <StatusPill status={e.status} />
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -993,10 +1518,6 @@ const PayslipDetail = ({ slip, payrunName, onBack }) => {
       {/* Top Breadcrumb Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button type="button" className="btn btn-outline btn-sm" onClick={onBack}>
-            <ArrowLeft size={14} />
-            <span>Back</span>
-          </button>
           <div>
             <h1 className="page-title font-display" style={{ margin: 0, fontSize: '1.375rem' }}>
               Payslip / {employeeName}
@@ -1007,16 +1528,19 @@ const PayslipDetail = ({ slip, payrunName, onBack }) => {
           </div>
         </div>
 
-        <div className="page-actions-group">
-          <StatusPill status={slip.status} />
+        <div className="payrun-actions-group">
+          <span className={`payslip-status-badge status-${(slip.status || 'done').toLowerCase()}`}>
+            <span className="status-dot" />
+            <span>{slip.status ? slip.status.charAt(0).toUpperCase() + slip.status.slice(1) : 'Done'}</span>
+          </span>
           <button
             type="button"
-            className="btn btn-outline"
-            style={{ background: 'var(--sky)', color: '#fff', borderColor: 'var(--sky)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            className="payrun-action-btn payrun-btn-mail"
             onClick={() => window.print()}
+            title="Print Payslip"
           >
-            <FileText size={15} />
-            <span>Print Payslip</span>
+            <FileText size={14} />
+            <span>Print Slip</span>
           </button>
         </div>
       </div>
@@ -1114,15 +1638,29 @@ const PayslipDetail = ({ slip, payrunName, onBack }) => {
 
 // ─── View: Payrun Detail ──────────────────────────────────────────────────────
 const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [payrun, setPayrun] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [acting, setActing] = useState(false);
   const [toast, setToast] = useState(null);
-  const [expandedSlip, setExpandedSlip] = useState(null);
+  const expandedSlip = searchParams.get('slip') ? Number(searchParams.get('slip')) : null;
   const [showEdit, setShowEdit] = useState(false);
   const [showSendMail, setShowSendMail] = useState(false);
   const [structures, setStructures] = useState([]);
+
+  const handleOpenSlip = (slipId) => {
+    setSearchParams({ id: String(payrunId), slip: String(slipId) });
+  };
+
+  const handleBackFromSlip = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({ id: String(payrunId) });
+    }
+  };
 
   useEffect(() => {
     getStructures().then((d) => setStructures(Array.isArray(d) ? d : d.items || []));
@@ -1199,7 +1737,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
 
   if (expandedSlip) {
     const slip = (payrun.payslips || []).find((s) => s.id === expandedSlip);
-    if (slip) return <PayslipDetail slip={slip} payrunName={payrun.name} onBack={() => setExpandedSlip(null)} />;
+    if (slip) return <PayslipDetail slip={slip} payrunName={payrun.name} onBack={handleBackFromSlip} />;
   }
 
   return (
@@ -1207,10 +1745,6 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
       {/* Top Breadcrumb Nav Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button type="button" className="btn btn-outline btn-sm" onClick={onBack}>
-            <ArrowLeft size={14} />
-            <span>Back to Payruns</span>
-          </button>
           <div>
             <h1 className="page-title font-display" style={{ margin: 0, fontSize: '1.375rem' }}>
               Payrun / {payrun.name}
@@ -1222,7 +1756,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
           <StatusPill status={status} />
         </div>
 
-        <div className="page-actions-group">
+        <div className="payrun-actions-group">
           {!canManagePayruns(currentUser) && (
             <span className="status-pill status-pill-neutral">
               <Eye size={13} style={{ marginRight: 4 }} />
@@ -1230,7 +1764,12 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
             </span>
           )}
           {status !== 'paid' && canManagePayruns(currentUser) && (
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowEdit(true)} title="Edit Payrun parameters">
+            <button
+              type="button"
+              className="payrun-action-btn"
+              onClick={() => setShowEdit(true)}
+              title="Edit Payrun parameters"
+            >
               <Edit2 size={13} />
               <span>Edit</span>
             </button>
@@ -1239,22 +1778,21 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
           {status !== 'draft' && status !== 'paid' && canManagePayruns(currentUser) && (
             <button
               type="button"
-              className="btn btn-outline btn-sm"
+              className="payrun-action-btn"
               onClick={() => doAction(async () => {
                 await updatePayrun(payrun.id, { status: 'draft' });
               }, 'Reset to Draft')}
               title="Reset payrun back to Draft to re-calculate"
             >
               <RefreshCw size={13} />
-              <span>Reset to Draft</span>
+              <span>Reset</span>
             </button>
           )}
 
           {status !== 'paid' && canDeletePayrun(currentUser) && (
             <button
               type="button"
-              className="btn btn-outline btn-sm"
-              style={{ color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.25)', background: 'var(--danger-bg)' }}
+              className="payrun-action-btn payrun-btn-danger"
               onClick={async () => {
                 if (!window.confirm(`Are you sure you want to delete payrun "${payrun.name}"? This cannot be undone.`)) return;
                 try {
@@ -1276,7 +1814,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
             <>
               <button
                 type="button"
-                className={canCompute ? 'btn-coral' : 'btn btn-outline'}
+                className={`payrun-action-btn ${canCompute ? 'payrun-btn-coral' : ''}`}
                 disabled={!canCompute || acting}
                 onClick={() => doAction(() => computePayrun(payrun.id), 'Compute')}
               >
@@ -1286,7 +1824,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
 
               <button
                 type="button"
-                className={canValidate ? 'btn-coral' : 'btn btn-outline'}
+                className={`payrun-action-btn ${canValidate ? 'payrun-btn-coral' : ''}`}
                 disabled={!canValidate || acting}
                 onClick={() => doAction(() => validatePayrun(payrun.id), 'Validate')}
               >
@@ -1296,7 +1834,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
 
               <button
                 type="button"
-                className={canPaid ? 'btn-coral' : 'btn btn-outline'}
+                className={`payrun-action-btn ${canPaid ? 'payrun-btn-coral' : ''}`}
                 disabled={!canPaid || acting}
                 onClick={() => doAction(() => markPayrunPaid(payrun.id), 'Mark Paid')}
               >
@@ -1306,13 +1844,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
 
               <button
                 type="button"
-                className="btn btn-outline"
-                style={{
-                  background: status === 'paid' ? 'var(--sky, #0284c7)' : 'rgba(2, 132, 199, 0.08)',
-                  color: status === 'paid' ? '#fff' : 'var(--sky, #0284c7)',
-                  borderColor: 'var(--sky, #0284c7)',
-                  fontWeight: 600,
-                }}
+                className={`payrun-action-btn ${status === 'paid' ? 'payrun-btn-mail' : 'payrun-btn-mail-outline'}`}
                 disabled={acting || (payrun.payslips || []).length === 0}
                 onClick={() => setShowSendMail(true)}
                 title="Send official payment slips with PDF attachments to employees via email"
@@ -1427,7 +1959,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
                 const deptColor = getDepartmentColor(deptName);
 
                 return (
-                  <tr key={slip.id} style={{ cursor: 'pointer' }} onClick={() => setExpandedSlip(slip.id)}>
+                  <tr key={slip.id} style={{ cursor: 'pointer' }} onClick={() => handleOpenSlip(slip.id)}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div className="dept-initials-chip-sm" style={{ backgroundColor: deptColor }}>
@@ -1478,7 +2010,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
                             <Trash2 size={13} />
                           </button>
                         )}
-                        <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); setExpandedSlip(slip.id); }} title="View Payslip Details">
+                        <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); handleOpenSlip(slip.id); }} title="View Payslip Details">
                           <ChevronRight size={14} />
                         </button>
                       </div>
@@ -1496,6 +2028,8 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
 
 // ─── Tab: Payruns (Accordion List) ────────────────────────────────────────────
 const PayrunsTab = ({ structures, onRefresh, currentUser }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [payruns, setPayruns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1503,9 +2037,17 @@ const PayrunsTab = ({ structures, onRefresh, currentUser }) => {
   const [yearFilter, setYearFilter] = useState('All');
   const [showModal, setShowModal] = useState(false);
   const [editingPayrun, setEditingPayrun] = useState(null);
-  const [detailId, setDetailId] = useState(null);
+  const detailId = searchParams.get('id') ? Number(searchParams.get('id')) : null;
   const [toast, setToast] = useState(null);
   const [expandedRow, setExpandedRow] = useState(null);
+
+  const handleBackFromDetail = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -1535,7 +2077,14 @@ const PayrunsTab = ({ structures, onRefresh, currentUser }) => {
   useEffect(() => { load(); }, [load]);
 
   if (detailId) {
-    return <PayrunDetail payrunId={detailId} onBack={() => setDetailId(null)} onRefresh={() => { load(); onRefresh(); }} currentUser={currentUser} />;
+    return (
+      <PayrunDetail
+        payrunId={detailId}
+        onBack={handleBackFromDetail}
+        onRefresh={() => { load(); onRefresh(); }}
+        currentUser={currentUser}
+      />
+    );
   }
 
   const filtered = payruns.filter((p) => {
@@ -1733,7 +2282,7 @@ const PayrunsTab = ({ structures, onRefresh, currentUser }) => {
                       <button
                         type="button"
                         className="btn btn-outline btn-sm"
-                        onClick={(e) => { e.stopPropagation(); setDetailId(pr.id); }}
+                        onClick={(e) => { e.stopPropagation(); setSearchParams({ id: String(pr.id) }); }}
                       >
                         <Eye size={13} />
                         <span>View</span>
@@ -1753,21 +2302,11 @@ const PayrunsTab = ({ structures, onRefresh, currentUser }) => {
                   {/* Expanded Accordion Area */}
                   {expanded && (
                     <div style={{ padding: '16px 24px 20px', background: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                        <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
-                          Status overview: <strong style={{ color: 'var(--ink)' }}>{slips.length}</strong> total payslips —{' '}
-                          <strong style={{ color: 'var(--success)' }}>{doneSlips}</strong> completed,{' '}
-                          <strong style={{ color: 'var(--ink)' }}>{slips.length - doneSlips}</strong> draft.
-                          {warns > 0 && <span style={{ color: 'var(--warning)', fontWeight: 600 }}> ({warns} flagged with warnings).</span>}
-                        </div>
-                        <button
-                          type="button"
-                          className="btn-coral btn-sm"
-                          onClick={() => setDetailId(pr.id)}
-                        >
-                          <span>Open Full Payrun View</span>
-                          <ChevronRight size={13} />
-                        </button>
+                      <div style={{ marginBottom: 14, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        Status overview: <strong style={{ color: 'var(--ink)' }}>{slips.length}</strong> total payslips —{' '}
+                        <strong style={{ color: 'var(--success)' }}>{doneSlips}</strong> completed,{' '}
+                        <strong style={{ color: 'var(--ink)' }}>{slips.length - doneSlips}</strong> draft.
+                        {warns > 0 && <span style={{ color: 'var(--warning)', fontWeight: 600 }}> ({warns} flagged with warnings).</span>}
                       </div>
 
                       {slips.length > 0 && (
@@ -1798,7 +2337,7 @@ const PayrunsTab = ({ structures, onRefresh, currentUser }) => {
                           </table>
                           {slips.length > 5 && (
                             <div style={{ padding: '8px 16px', fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center', background: 'var(--card)', borderTop: '1px solid var(--border)' }}>
-                              + {slips.length - 5} more payslips. Open full payrun view to see all records.
+                              + {slips.length - 5} more payslips. Click "View" above to see all records.
                             </div>
                           )}
                         </div>
@@ -1817,11 +2356,22 @@ const PayrunsTab = ({ structures, onRefresh, currentUser }) => {
 
 // ─── Tab: Payslips (Directory List) ───────────────────────────────────────────
 const PayslipsTab = ({ currentUser }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [payruns, setPayruns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [expandedSlip, setExpandedSlip] = useState(null);
+  const expandedSlip = searchParams.get('slip') ? Number(searchParams.get('slip')) : null;
+
+  const handleOpenSlip = (id) => setSearchParams({ slip: String(id) });
+  const handleBackFromSlip = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const isEmployee = currentUser?.role === UserRole.EMPLOYEE;
 
@@ -1858,7 +2408,7 @@ const PayslipsTab = ({ currentUser }) => {
 
   if (expandedSlip) {
     const slip = allSlips.find((s) => s.id === expandedSlip);
-    if (slip) return <PayslipDetail slip={slip} payrunName={slip.payrun_name} onBack={() => setExpandedSlip(null)} />;
+    if (slip) return <PayslipDetail slip={slip} payrunName={slip.payrun_name} onBack={handleBackFromSlip} />;
   }
 
   return (
@@ -1934,7 +2484,7 @@ const PayslipsTab = ({ currentUser }) => {
                     <tr
                       key={slip.id}
                       style={{ cursor: 'pointer' }}
-                      onClick={() => setExpandedSlip(slip.id)}
+                      onClick={() => handleOpenSlip(slip.id)}
                     >
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1975,11 +2525,13 @@ const PayslipsTab = ({ currentUser }) => {
 
 // ─── Tab: Salary Structures ───────────────────────────────────────────────────
 const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const canManage = canManageStructures(currentUser);
   const [search, setSearch] = useState('');
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [editingStructure, setEditingStructure] = useState(null);
-  const [detailId, setDetailId] = useState(null);
+  const detailId = searchParams.get('id') ? Number(searchParams.get('id')) : null;
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showRuleModal, setShowRuleModal] = useState(false);
@@ -1987,20 +2539,32 @@ const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) =
   const [toast, setToast] = useState(null);
   const [formError, setFormError] = useState(null);
 
+  const handleOpenDetail = (id) => setSearchParams({ id: String(id) });
+  const handleBackFromStructure = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
+  };
+
   const filtered = structures.filter((s) => !search || s.name.toLowerCase().includes(search.toLowerCase()));
 
   const openDetail = async (id) => {
-    setDetailId(id);
-    setDetailLoading(true);
-    try {
-      const d = await getStructureById(id);
-      setDetail(d);
-    } catch {
-      setDetail(null);
-    } finally {
-      setDetailLoading(false);
-    }
+    handleOpenDetail(id);
   };
+
+  useEffect(() => {
+    if (detailId) {
+      setDetailLoading(true);
+      getStructureById(detailId)
+        .then((d) => setDetail(d))
+        .catch(() => setDetail(null))
+        .finally(() => setDetailLoading(false));
+    } else {
+      setDetail(null);
+    }
+  }, [detailId]);
 
   const handleDeleteStructure = async (id, e) => {
     if (e) e.stopPropagation();
@@ -2008,7 +2572,7 @@ const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) =
     try {
       await deleteStructure(id);
       setToast('Structure deleted successfully.');
-      if (detailId === id) { setDetailId(null); setDetail(null); }
+      if (detailId === id) { handleBackFromStructure(); setDetail(null); }
       onRefresh();
     } catch (err) {
       setFormError(err.message);
@@ -2020,7 +2584,10 @@ const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) =
     try {
       await deleteRule(ruleId);
       setToast('Salary rule removed.');
-      if (detailId) await openDetail(detailId);
+      if (detailId) {
+        const d = await getStructureById(detailId);
+        setDetail(d);
+      }
       onRefresh();
     } catch (e) {
       setFormError(e.message);
@@ -2033,13 +2600,27 @@ const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) =
         <StructureModal
           isOpen={showStructureModal}
           onClose={() => { setShowStructureModal(false); setEditingStructure(null); }}
-          onSaved={(msg) => { setToast(msg); openDetail(detailId); onRefresh(); }}
+          onSaved={async (msg) => {
+            setToast(msg);
+            if (detailId) {
+              const d = await getStructureById(detailId);
+              setDetail(d);
+            }
+            onRefresh();
+          }}
           editingStructure={editingStructure}
         />
         <SalaryRuleModal
           isOpen={showRuleModal}
           onClose={() => { setShowRuleModal(false); setEditingRule(null); }}
-          onSaved={(msg) => { setToast(msg); openDetail(detailId); onRefresh(); }}
+          onSaved={async (msg) => {
+            setToast(msg);
+            if (detailId) {
+              const d = await getStructureById(detailId);
+              setDetail(d);
+            }
+            onRefresh();
+          }}
           editingRule={editingRule}
           structures={structures}
           defaultStructureId={detailId}
@@ -2048,17 +2629,13 @@ const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) =
         {/* Top Breadcrumb Nav */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => { setDetailId(null); setDetail(null); }}>
-              <ArrowLeft size={14} />
-              <span>Back to Structures</span>
-            </button>
             <h1 className="page-title font-display" style={{ margin: 0, fontSize: '1.375rem' }}>
               Salary Structure / {detail?.name || 'Structure'}
             </h1>
             <StatusPill status={detail?.is_active ? 'active' : 'inactive'} />
           </div>
 
-          <div className="page-actions-group">
+          <div className="payrun-actions-group">
             {!canManage && (
               <span className="status-pill status-pill-neutral">
                 <Eye size={13} style={{ marginRight: 4 }} />
@@ -2069,27 +2646,29 @@ const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) =
               <>
                 <button
                   type="button"
-                  className="btn btn-outline btn-sm"
+                  className="payrun-action-btn"
                   onClick={() => { setEditingStructure(detail); setShowStructureModal(true); }}
+                  title="Edit Structure"
                 >
                   <Edit2 size={13} />
                   <span>Edit</span>
                 </button>
                 <button
                   type="button"
-                  className="btn btn-outline btn-sm"
-                  style={{ color: 'var(--danger)', borderColor: 'var(--border)' }}
+                  className="payrun-action-btn payrun-btn-danger"
                   onClick={(e) => handleDeleteStructure(detail.id, e)}
+                  title="Delete Structure"
                 >
                   <Trash2 size={13} />
                   <span>Delete</span>
                 </button>
                 <button
                   type="button"
-                  className="btn-coral"
+                  className="payrun-action-btn payrun-btn-coral"
                   onClick={() => { setEditingRule(null); setShowRuleModal(true); }}
+                  title="Add Rule"
                 >
-                  <Plus size={15} />
+                  <Plus size={14} />
                   <span>Add Rule</span>
                 </button>
               </>
@@ -2302,7 +2881,7 @@ const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) =
                 </tr>
               ) : (
                 filtered.map((s) => (
-                  <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => openDetail(s.id)}>
+                  <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => handleOpenDetail(s.id)}>
                     <td style={{ fontWeight: 600, color: 'var(--ink)' }}>
                       {s.name}
                     </td>
@@ -2322,7 +2901,7 @@ const StructuresTab = ({ structures, loading, error, onRefresh, currentUser }) =
                         <button
                           type="button"
                           className="btn btn-outline btn-sm"
-                          onClick={() => openDetail(s.id)}
+                          onClick={() => handleOpenDetail(s.id)}
                         >
                           <Eye size={13} />
                           <span>View</span>

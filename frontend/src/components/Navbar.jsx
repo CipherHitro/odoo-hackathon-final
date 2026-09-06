@@ -11,9 +11,6 @@ import {
   Layers,
   FileText,
   ShieldCheck,
-  BarChart2,
-  Zap,
-  Settings,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -287,36 +284,13 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
 
             {canViewPayrollAdminTabs(user) && (
               <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
-                <button
-                  type="button"
+                <NavLink
+                  to="/payroll/dashboard"
                   className="navbar-tab-button"
-                  onClick={() => toggleDropdown('payroll')}
-                  aria-expanded={openDropdown === 'payroll'}
+                  onClick={() => setOpenDropdown(null)}
                 >
                   <span>Payroll</span>
-                  <ChevronDown size={13} className={`dropdown-chevron ${openDropdown === 'payroll' ? 'is-rotated' : ''}`} />
-                </button>
-
-                {openDropdown === 'payroll' && (
-                  <div className="navbar-dropdown-menu">
-                    <NavLink to="/payroll/dashboard" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
-                      <BarChart2 size={15} />
-                      <span>Dashboard</span>
-                    </NavLink>
-                    <NavLink to="/payroll/payruns" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
-                      <Zap size={15} />
-                      <span>Payruns</span>
-                    </NavLink>
-                    <NavLink to="/payroll/payslips" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
-                      <FileText size={15} />
-                      <span>Payslips</span>
-                    </NavLink>
-                    <NavLink to="/payroll/rules" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
-                      <Settings size={15} />
-                      <span>Rules {user?.role === UserRole.HR_PAYROLL_USER ? '(Read-only)' : ''}</span>
-                    </NavLink>
-                  </div>
-                )}
+                </NavLink>
               </div>
             )}
 

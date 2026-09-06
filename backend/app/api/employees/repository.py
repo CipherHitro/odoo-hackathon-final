@@ -11,6 +11,7 @@ class EmployeeRepository:
     @staticmethod
     async def get_all(db: AsyncSession, include_archived: bool = False) -> List[Employee]:
         query = select(Employee).options(
+            selectinload(Employee.department),
             selectinload(Employee.contracts),
             selectinload(Employee.attendance_records),
             selectinload(Employee.time_off_requests),
@@ -26,6 +27,7 @@ class EmployeeRepository:
             select(Employee)
             .where(Employee.id == employee_id)
             .options(
+                selectinload(Employee.department),
                 selectinload(Employee.contracts),
                 selectinload(Employee.attendance_records),
                 selectinload(Employee.time_off_requests),
@@ -39,6 +41,7 @@ class EmployeeRepository:
             select(Employee)
             .where(Employee.user_id == user_id)
             .options(
+                selectinload(Employee.department),
                 selectinload(Employee.contracts),
                 selectinload(Employee.attendance_records),
                 selectinload(Employee.time_off_requests),

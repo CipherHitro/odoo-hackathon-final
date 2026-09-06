@@ -14,6 +14,7 @@ class EmployeeController:
         resp.contracts_count = len(emp.contracts) if emp.contracts else 0
         resp.attendance_count = len(emp.attendance_records) if emp.attendance_records else 0
         resp.time_off_count = len(emp.time_off_requests) if emp.time_off_requests else 0
+        resp.department_name = emp.department.name if emp.department else None
         return resp
 
     @classmethod

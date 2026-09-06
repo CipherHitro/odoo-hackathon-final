@@ -58,6 +58,7 @@ class EmployeeUpdate(BaseModel):
 
 class EmployeeResponse(EmployeeBase):
     id: int
+    department_name: Optional[str] = None
     address: Optional[str] = None
 
     @model_validator(mode="after")
