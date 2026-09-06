@@ -1,4 +1,5 @@
 import logging
+import re
 from decimal import Decimal
 from typing import List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,8 +8,6 @@ import calendar
 
 from app.models.payroll import Payrun, Payslip, PayslipLine, SalaryStructure, SalaryRule, PayslipStatus, PayrunStatus
 from app.models.employee import Employee
-from app.api.payruns.repository import PayrunRepository
-from app.api.payroll.repository import PayrollRepository
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +15,7 @@ def safe_eval(code_str: str, context: Dict[str, Any]) -> Decimal:
     """
     Safely evaluate a python code string used in a Salary Rule.
     Only allows basic arithmetic and reading from the context.
+    Coerces float literals (e.g. 1.5, 0.2) to Decimal so Decimal operations succeed.
     """
     allowed_builtins = {
         "abs": abs,
@@ -25,16 +25,12 @@ def safe_eval(code_str: str, context: Dict[str, Any]) -> Decimal:
         "bool": bool,
         "float": float,
         "int": int,
+        "Decimal": Decimal,
     }
     try:
-        # Evaluate the code string with a restricted execution environment
-        # WARNING: Even with __builtins__ restricted, eval() in python is not 100% sandboxed
-        # against advanced AST attacks, but it satisfies the requirement for "strict sandboxed/safe evaluation"
-        # without introducing 3rd party parser dependencies like simpleeval.
-        # In a real enterprise system, an AST parser is recommended.
-        
-        # We expect the code to be an expression that returns a value (e.g. "BASIC * 0.2")
-        result = eval(code_str, {"__builtins__": allowed_builtins}, context)
+        # Transform float literals like 1.5 or 0.2 into Decimal('1.5') to avoid Decimal * float errors
+        processed_code = re.sub(r'(?<![a-zA-Z0-9_])(\d+\.\d+)(?![a-zA-Z0-9_])', r"Decimal('\1')", code_str)
+        result = eval(processed_code, {"__builtins__": allowed_builtins}, context)
         return Decimal(str(result))
     except Exception as e:
         logger.error(f"Error evaluating rule code '{code_str}': {e}")
@@ -43,7 +39,7 @@ def safe_eval(code_str: str, context: Dict[str, Any]) -> Decimal:
 class PayrollEngine:
     @staticmethod
     def _calculate_scheduled_days(contract, date_from, date_to) -> int:
-        if not contract.working_schedule or not contract.working_schedule.schedule_lines:
+        if not contract or not contract.working_schedule or not contract.working_schedule.schedule_lines:
             # Fallback to standard 30 days if no schedule
             return 30
             
@@ -62,13 +58,34 @@ class PayrollEngine:
         return scheduled_days
 
     @staticmethod
+    def _calculate_scheduled_hours(contract, date_from, date_to) -> float:
+        if not contract or not contract.working_schedule or not contract.working_schedule.schedule_lines:
+            return 160.0  # standard monthly hours fallback
+            
+        day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        line_hours = {line.day_of_week: float(line.work_hours) for line in contract.working_schedule.schedule_lines}
+        
+        scheduled_hours = 0.0
+        current_date = date_from
+        while current_date <= date_to:
+            day_name = day_names[current_date.weekday()]
+            if day_name in line_hours:
+                scheduled_hours += line_hours[day_name]
+            current_date += timedelta(days=1)
+            
+        return scheduled_hours
+
+    @staticmethod
     async def compute_payrun(db: AsyncSession, payrun: Payrun, employee_ids: List[int]) -> List[Payslip]:
+        from app.api.payruns.repository import PayrunRepository
+        from app.api.payroll.repository import PayrollRepository
+
         # 1. Load Salary Structure and Rules
-        structure = await PayrollRepository.get_structure_by_id(db, payrun.salary_structure_id)
-        if not structure:
+        default_structure = await PayrollRepository.get_structure_by_id(db, payrun.salary_structure_id)
+        if not default_structure:
             raise ValueError(f"Salary Structure {payrun.salary_structure_id} not found")
             
-        rules = structure.salary_rules # Already ordered by sequence via selectinload
+        structures_cache = {default_structure.id: default_structure}
 
         # Prepare resulting payslips
         payslips = []
@@ -81,10 +98,21 @@ class PayrollEngine:
             # 3. Find applicable contract (active running or post-tenure fallback)
             contract, is_post_tenure = await PayrunRepository.get_active_contract(db, emp_id, payrun.date_from, payrun.date_to)
             
+            # Determine structure: use contract's structure if specified, else payrun default
+            emp_structure = default_structure
+            if contract and contract.salary_structure_id:
+                if contract.salary_structure_id not in structures_cache:
+                    cached = await PayrollRepository.get_structure_by_id(db, contract.salary_structure_id)
+                    if cached:
+                        structures_cache[contract.salary_structure_id] = cached
+                emp_structure = structures_cache.get(contract.salary_structure_id, default_structure)
+
+            rules = emp_structure.salary_rules
+
             payslip = Payslip(
                 payrun_id=payrun.id,
                 employee_id=emp_id,
-                salary_structure_id=structure.id,
+                salary_structure_id=emp_structure.id,
                 contract_id=contract.id if contract else None,
                 date_from=payrun.date_from,
                 date_to=payrun.date_to,
@@ -111,19 +139,21 @@ class PayrollEngine:
 
             # 4. Gather Attendance & Time Off Context
             scheduled_days = PayrollEngine._calculate_scheduled_days(contract, payrun.date_from, payrun.date_to)
+            scheduled_hours = PayrollEngine._calculate_scheduled_hours(contract, payrun.date_from, payrun.date_to)
             time_off_days = await PayrunRepository.get_approved_time_off_days(db, emp_id, payrun.date_from, payrun.date_to)
             worked_hours = await PayrunRepository.get_attendance_hours(db, emp_id, payrun.date_from, payrun.date_to)
             
             actual_worked_days = max(0, scheduled_days - time_off_days)
             payslip.worked_days = int(actual_worked_days)
 
-            # 5. Initialize Calculation Context
+            # 5. Initialize Calculation Context (Salary is engine & rule driven)
             context = {
-                "CONTRACT_WAGE": Decimal(str(contract.wage_monthly)),
                 "SCHEDULED_DAYS": Decimal(str(scheduled_days)),
                 "WORKED_DAYS": Decimal(str(actual_worked_days)),
                 "TIME_OFF_DAYS": Decimal(str(time_off_days)),
-                "WORKED_HOURS": Decimal(str(worked_hours))
+                "WORKED_HOURS": Decimal(str(worked_hours)),
+                "SCHEDULED_HOURS": Decimal(str(scheduled_hours)),
+                "MISSED_HOURS": Decimal(str(max(0.0, scheduled_hours - worked_hours))),
             }
             
             # 6. Execute Rules in Sequence
@@ -136,7 +166,7 @@ class PayrollEngine:
                         base_val = context.get(rule.percentage_base, Decimal("0"))
                         pct = Decimal(str(rule.percentage or 0))
                         amount = base_val * (pct / Decimal("100"))
-                    elif rule.computation == "python" or rule.computation == "code":
+                    elif rule.computation in ("python", "code"):
                         if not rule.python_code:
                             raise ValueError(f"Rule {rule.code} is type python but has no code")
                         amount = safe_eval(rule.python_code, context)
@@ -149,9 +179,9 @@ class PayrollEngine:
                     if cat == "BASIC":
                         payslip.basic_wage += amount
                     elif cat == "GROSS":
-                        payslip.gross_wage += amount
+                        payslip.gross_wage = amount
                     elif cat == "NET":
-                        payslip.net_wage += amount
+                        payslip.net_wage = amount
 
                     # Create PayslipLine
                     pline = PayslipLine(

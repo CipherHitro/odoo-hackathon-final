@@ -19,7 +19,13 @@ class PayrunService:
 
     @staticmethod
     async def create_payrun(db: AsyncSession, data: PayrunCreate) -> Payrun:
-        payrun = Payrun(**data.model_dump())
+        dump = data.model_dump()
+        if not dump.get("salary_structure_id"):
+            from app.models.payroll import SalaryStructure
+            res = await db.execute(select(SalaryStructure.id).where(SalaryStructure.is_active == True).order_by(SalaryStructure.id))
+            first_id = res.scalars().first()
+            dump["salary_structure_id"] = first_id or 1
+        payrun = Payrun(**dump)
         return await PayrunRepository.create_payrun(db, payrun)
 
     @staticmethod

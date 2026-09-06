@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_, case
+from sqlalchemy import select, func, and_, or_, case, distinct
 from decimal import Decimal
 from datetime import date, timedelta
 from typing import List, Dict, Any
@@ -32,13 +32,9 @@ class DashboardRepository:
         if avg_val > 0:
             return round(avg_val, 2)
 
-        # Fallback to real active contract average wage
-        contract_result = await db.execute(
-            select(func.coalesce(func.avg(Contract.wage_monthly), 0))
-            .where(Contract.status == ContractStatus.RUNNING)
-        )
-        c_avg = Decimal(contract_result.scalar() or 0)
-        return round(c_avg, 2)
+        # Fallback to average net wage across all payslips
+        all_slip = await db.execute(select(func.coalesce(func.avg(Payslip.net_wage), 0)))
+        return round(Decimal(all_slip.scalar() or 0), 2)
 
     @staticmethod
     async def get_payslips_generated(db: AsyncSession) -> int:
@@ -107,15 +103,14 @@ class DashboardRepository:
         if rows:
             return [{"department_name": row[0], "total_cost": Decimal(row[1])} for row in rows]
 
-        # If no payslips yet, show department salary cost from active contracts
+        # If no paid payslips yet, show department salary cost from existing payslips
         c_result = await db.execute(
-            select(Department.name, func.coalesce(func.sum(Contract.wage_monthly), 0))
+            select(Department.name, func.coalesce(func.sum(Payslip.net_wage), 0))
             .select_from(Department)
             .join(Employee, Employee.department_id == Department.id)
-            .join(Contract, Contract.employee_id == Employee.id)
-            .where(Contract.status == ContractStatus.RUNNING)
+            .join(Payslip, Payslip.employee_id == Employee.id)
             .group_by(Department.id, Department.name)
-            .order_by(func.sum(Contract.wage_monthly).desc())
+            .order_by(func.sum(Payslip.net_wage).desc())
         )
         return [{"department_name": row[0], "total_cost": Decimal(row[1])} for row in c_result.all() if row[1] > 0]
 
@@ -317,16 +312,16 @@ class DashboardRepository:
 
     @staticmethod
     async def get_department_overview(db: AsyncSession) -> list[dict]:
-        """Real headcount and monthly salary budget by Department."""
+        """Real headcount and monthly salary budget by Department from payslips."""
         result = await db.execute(
             select(
                 Department.name,
-                func.count(Employee.id).label('headcount'),
-                func.coalesce(func.sum(Contract.wage_monthly), 0).label('monthly_salary')
+                func.count(distinct(Employee.id)).label('headcount'),
+                func.coalesce(func.sum(Payslip.net_wage), 0).label('monthly_salary')
             )
             .select_from(Department)
             .outerjoin(Employee, Employee.department_id == Department.id)
-            .outerjoin(Contract, and_(Contract.employee_id == Employee.id, Contract.status.in_([ContractStatus.RUNNING, ContractStatus.DRAFT])))
+            .outerjoin(Payslip, Payslip.employee_id == Employee.id)
             .group_by(Department.id, Department.name)
             .order_by(Department.name)
         )

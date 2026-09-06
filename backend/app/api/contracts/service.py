@@ -91,15 +91,11 @@ class ContractService:
             salary_structure_id=data.salary_structure_id,
         )
 
-        # 3. Validate wage
-        if data.wage_monthly <= 0:
-            raise ContractValidationError("Monthly wage must be greater than zero.")
-
-        # 4. Validate dates
+        # 3. Validate dates
         if data.end_date is not None and data.end_date <= data.start_date:
             raise InvalidDateRangeError("End date cannot be on or before start date.")
 
-        # 5. Overlap validation for RUNNING contracts
+        # 4. Overlap validation for RUNNING contracts
         status_val = (
             data.status.value
             if isinstance(data.status, ContractStatus)
@@ -135,11 +131,7 @@ class ContractService:
             salary_structure_id=data.salary_structure_id,
         )
 
-        # 2. Validate wage if updated
-        if data.wage_monthly is not None and data.wage_monthly <= 0:
-            raise ContractValidationError("Monthly wage must be greater than zero.")
-
-        # 3. Determine effective dates and validate
+        # 2. Determine effective dates and validate
         effective_start = data.start_date if data.start_date is not None else contract.start_date
         raw_update = data.model_dump(exclude_unset=True)
         effective_end = data.end_date if "end_date" in raw_update else contract.end_date

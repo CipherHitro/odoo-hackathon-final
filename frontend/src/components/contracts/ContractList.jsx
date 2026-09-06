@@ -76,7 +76,7 @@ const ContractList = ({ contracts, onSelectContract }) => {
             <th style={{ width: '28%' }}>Employee</th>
             <th style={{ width: '14%' }}>Start Date</th>
             <th style={{ width: '14%' }}>End Date</th>
-            <th style={{ width: '14%', textAlign: 'right' }}>Wage / Month</th>
+            <th style={{ width: '18%' }}>Salary Structure</th>
             <th style={{ width: '12%', textAlign: 'right' }}>Status</th>
           </tr>
         </thead>
@@ -112,20 +112,8 @@ const ContractList = ({ contracts, onSelectContract }) => {
                       <div style={{ fontWeight: '600', color: 'var(--ink)' }}>
                         {contract.employee_name || `Employee #${contract.employee_id}`}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span>{contract.job_position || contract.department_name || 'Staff Member'}</span>
-                        {contract.salary_structure_name && (
-                          <span style={{
-                            fontSize: '10px',
-                            background: 'rgba(99, 102, 241, 0.08)',
-                            color: '#4f46e5',
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            fontWeight: 500,
-                          }}>
-                            {contract.salary_structure_name}
-                          </span>
-                        )}
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        {contract.job_position || contract.department_name || 'Staff Member'}
                       </div>
                     </div>
                   </div>
@@ -141,9 +129,21 @@ const ContractList = ({ contracts, onSelectContract }) => {
                   {contract.end_date ? formatDate(contract.end_date) : '—'}
                 </td>
 
-                {/* Wage per Month in JetBrains Mono, right-aligned per 02-contracts.md */}
-                <td className="wage-mono">
-                  {formatCurrency(contract.wage_monthly)}
+                {/* Salary Structure */}
+                <td>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    background: 'rgba(99, 102, 241, 0.08)',
+                    color: '#4f46e5',
+                    border: '1px solid rgba(99, 102, 241, 0.2)'
+                  }}>
+                    {contract.salary_structure_name || 'Standard Structure'}
+                  </span>
                 </td>
 
                 {/* Status Pill */}
