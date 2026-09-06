@@ -48,7 +48,7 @@ class PayslipResponse(PayslipBase):
 # Payrun
 class PayrunBase(BaseModel):
     name: str
-    salary_structure_id: int
+    salary_structure_id: Optional[int] = None
     date_from: date
     date_to: date
 

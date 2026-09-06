@@ -35,7 +35,6 @@ class ContractController:
             job_position=contract.job_position,
             start_date=contract.start_date,
             end_date=contract.end_date,
-            wage_monthly=contract.wage_monthly,
             working_schedule_id=contract.working_schedule_id,
             working_schedule_name=contract.working_schedule.name if contract.working_schedule else None,
             salary_structure_id=contract.salary_structure_id,

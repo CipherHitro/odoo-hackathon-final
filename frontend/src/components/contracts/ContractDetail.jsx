@@ -46,7 +46,6 @@ const ContractDetail = ({
     job_position: contract?.job_position || '',
     start_date: contract?.start_date || new Date().toISOString().split('T')[0],
     end_date: contract?.end_date || '',
-    wage_monthly: contract?.wage_monthly !== undefined ? String(contract.wage_monthly) : '50000',
     working_schedule_id: contract?.working_schedule_id ? String(contract.working_schedule_id) : (schedules[0]?.id ? String(schedules[0].id) : ''),
     salary_structure_id: contract?.salary_structure_id ? String(contract.salary_structure_id) : (structures[0]?.id ? String(structures[0].id) : ''),
     status: contract?.status ? contract.status.toLowerCase() : 'draft',
@@ -61,7 +60,6 @@ const ContractDetail = ({
         job_position: contract.job_position || '',
         start_date: contract.start_date || new Date().toISOString().split('T')[0],
         end_date: contract.end_date || '',
-        wage_monthly: contract.wage_monthly !== undefined ? String(contract.wage_monthly) : '50000',
         working_schedule_id: contract.working_schedule_id ? String(contract.working_schedule_id) : (schedules[0]?.id ? String(schedules[0].id) : ''),
         salary_structure_id: contract.salary_structure_id ? String(contract.salary_structure_id) : (structures[0]?.id ? String(structures[0].id) : ''),
         status: contract.status ? contract.status.toLowerCase() : 'draft',
@@ -115,11 +113,6 @@ const ContractDetail = ({
       setError('Please specify a start date.');
       return;
     }
-    const wageNum = parseFloat(formData.wage_monthly);
-    if (!formData.wage_monthly || isNaN(wageNum) || wageNum <= 0) {
-      setError('Wage must be a valid positive number greater than zero.');
-      return;
-    }
     if (!formData.status) {
       setError('Please select a contract status.');
       return;
@@ -138,7 +131,6 @@ const ContractDetail = ({
         employee_id: parseInt(formData.employee_id, 10),
         start_date: formData.start_date,
         end_date: formData.end_date ? formData.end_date : null,
-        wage_monthly: wageNum,
         department_id: formData.department_id ? parseInt(formData.department_id, 10) : null,
         job_position: formData.job_position ? formData.job_position.trim() : null,
         working_schedule_id: formData.working_schedule_id ? parseInt(formData.working_schedule_id, 10) : null,
@@ -384,23 +376,19 @@ const ContractDetail = ({
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="wage_monthly">
-                  Wage / Month (INR) <span style={{ color: 'var(--coral)' }}>*</span>
-                </label>
-                <input
-                  type="number"
-                  step="500"
-                  id="wage_monthly"
-                  name="wage_monthly"
-                  disabled={!isEditing}
-                  className="form-control wage-mono"
-                  style={{ textAlign: 'left', fontWeight: '600' }}
-                  placeholder="e.g. 85000"
-                  value={formData.wage_monthly}
-                  onChange={handleChange}
-                  required
-                />
+              <div style={{
+                background: 'rgba(99, 102, 241, 0.05)',
+                border: '1px dashed rgba(99, 102, 241, 0.3)',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                marginBottom: '16px',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
+              }}>
+                <span style={{ fontWeight: 600, color: 'var(--brand-primary)', display: 'block', marginBottom: '2px' }}>
+                  ⚙️ Dynamic Salary Calculation
+                </span>
+                Monthly wages & deductions are calculated dynamically by the Payroll Engine using the assigned Salary Structure, attendance records, and approved leaves.
               </div>
 
               <div className="form-group">

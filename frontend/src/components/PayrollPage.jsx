@@ -626,8 +626,8 @@ const NewPayrunModal = ({ structures, onClose, onCreated }) => {
   });
 
   const goStep2 = async () => {
-    if (!form.name || !form.salary_structure_id || !form.date_from || !form.date_to) {
-      setFormError('All fields in Step 1 are required.');
+    if (!form.name || !form.date_from || !form.date_to) {
+      setFormError('Please enter Pay Run Name and select both From and To dates.');
       return;
     }
     setFormError(null);
@@ -766,17 +766,6 @@ const NewPayrunModal = ({ structures, onClose, onCreated }) => {
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 />
-              </div>
-
-              <div>
-                <label className="form-label">Salary Structure</label>
-                <select
-                  className="form-control"
-                  value={form.salary_structure_id}
-                  onChange={(e) => setForm((f) => ({ ...f, salary_structure_id: e.target.value }))}
-                >
-                  {structures.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
               </div>
 
               <div className="form-grid-2col" style={{ gap: 12 }}>
@@ -1035,16 +1024,6 @@ const EditPayrunModal = ({ payrun, structures, onClose, onUpdated }) => {
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
-            </div>
-            <div>
-              <label className="form-label">Salary Structure</label>
-              <select
-                className="form-control"
-                value={form.salary_structure_id}
-                onChange={(e) => setForm((f) => ({ ...f, salary_structure_id: e.target.value }))}
-              >
-                {structures.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
             </div>
             <div className="form-grid-2col" style={{ gap: 12 }}>
               <div>
@@ -1897,8 +1876,8 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{fmtDate(payrun.date_from)} – {fmtDate(payrun.date_to)}</div>
         </div>
         <div className="card" style={{ padding: '16px 20px' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 4 }}>Structure ID</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>#{payrun.salary_structure_id}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 4 }}>Employees Included</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{(payrun.payslips || []).length} Staff Members</div>
         </div>
         <div className="card" style={{ padding: '16px 20px' }}>
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 4 }}>Total Net Payout</div>

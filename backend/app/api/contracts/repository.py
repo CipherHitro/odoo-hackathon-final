@@ -228,7 +228,6 @@ class ContractRepository:
                 job_position=job_position,
                 start_date=data.start_date,
                 end_date=data.end_date,
-                wage_monthly=data.wage_monthly,
                 working_schedule_id=working_schedule_id,
                 salary_structure_id=data.salary_structure_id,
                 status=status_val,

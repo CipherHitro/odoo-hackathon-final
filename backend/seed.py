@@ -448,33 +448,48 @@ async def seed_data():
         std_salary_struct = SalaryStructure(
             name="Standard Indian Tech Structure",
             is_active=True,
-            notes="Standard structure including Basic, HRA, Special Allowance, PF, and Professional Tax",
+            notes="Standard structure including Basic, HRA, Special Allowance, Leave Deduction, PF, and Professional Tax",
         )
         exec_salary_struct = SalaryStructure(
             name="Executive Leadership Structure",
             is_active=True,
-            notes="Executive structure with leadership allowances and performance incentives",
+            notes="Executive structure with leadership allowances, leave deduction, and performance incentives",
         )
-        db.add_all([std_salary_struct, exec_salary_struct])
+        hourly_salary_struct = SalaryStructure(
+            name="Hourly & Part-Time Structure",
+            is_active=True,
+            notes="Hourly wage structure based on actual logged attendance hours and overtime",
+        )
+        db.add_all([std_salary_struct, exec_salary_struct, hourly_salary_struct])
         await db.flush()
 
         rules_data = [
             {"salary_structure_id": std_salary_struct.id, "name": "Basic Salary", "code": "BASIC", "category": "BASIC", "sequence": 10, "computation": "fixed", "fixed_amount": Decimal("50000.00")},
             {"salary_structure_id": std_salary_struct.id, "name": "House Rent Allowance", "code": "HRA", "category": "ALLOWANCE", "sequence": 20, "computation": "percentage", "percentage": 40.0, "percentage_base": "BASIC"},
             {"salary_structure_id": std_salary_struct.id, "name": "Special Allowance", "code": "SPECIAL", "category": "ALLOWANCE", "sequence": 30, "computation": "fixed", "fixed_amount": Decimal("15000.00")},
-            {"salary_structure_id": std_salary_struct.id, "name": "Gross Wage", "code": "GROSS", "category": "GROSS", "sequence": 40, "computation": "python", "python_code": "BASIC + HRA + SPECIAL"},
+            {"salary_structure_id": std_salary_struct.id, "name": "Leave / Absence Deduction", "code": "LEAVE_DED", "category": "DEDUCTION", "sequence": 35, "computation": "python", "python_code": "round((BASIC / SCHEDULED_DAYS) * TIME_OFF_DAYS, 2) if SCHEDULED_DAYS > 0 else 0"},
+            {"salary_structure_id": std_salary_struct.id, "name": "Gross Wage", "code": "GROSS", "category": "GROSS", "sequence": 40, "computation": "python", "python_code": "BASIC + HRA + SPECIAL - LEAVE_DED"},
             {"salary_structure_id": std_salary_struct.id, "name": "Provident Fund", "code": "PF", "category": "DEDUCTION", "sequence": 50, "computation": "percentage", "percentage": 12.0, "percentage_base": "BASIC"},
             {"salary_structure_id": std_salary_struct.id, "name": "Professional Tax", "code": "PT", "category": "DEDUCTION", "sequence": 60, "computation": "fixed", "fixed_amount": Decimal("200.00")},
             {"salary_structure_id": std_salary_struct.id, "name": "Net Salary", "code": "NET", "category": "NET", "sequence": 70, "computation": "python", "python_code": "GROSS - PF - PT"},
 
             # Executive
-            {"salary_structure_id": exec_salary_struct.id, "name": "Basic Salary", "code": "BASIC", "category": "BASIC", "sequence": 10, "computation": "fixed", "fixed_amount": Decimal("80000.00")},
+            {"salary_structure_id": exec_salary_struct.id, "name": "Basic Salary", "code": "BASIC", "category": "BASIC", "sequence": 10, "computation": "fixed", "fixed_amount": Decimal("90000.00")},
             {"salary_structure_id": exec_salary_struct.id, "name": "House Rent Allowance", "code": "HRA", "category": "ALLOWANCE", "sequence": 20, "computation": "percentage", "percentage": 50.0, "percentage_base": "BASIC"},
-            {"salary_structure_id": exec_salary_struct.id, "name": "Executive Allowance", "code": "EXEC", "category": "ALLOWANCE", "sequence": 30, "computation": "fixed", "fixed_amount": Decimal("30000.00")},
-            {"salary_structure_id": exec_salary_struct.id, "name": "Gross Wage", "code": "GROSS", "category": "GROSS", "sequence": 40, "computation": "python", "python_code": "BASIC + HRA + EXEC"},
+            {"salary_structure_id": exec_salary_struct.id, "name": "Executive Allowance", "code": "EXEC", "category": "ALLOWANCE", "sequence": 30, "computation": "fixed", "fixed_amount": Decimal("35000.00")},
+            {"salary_structure_id": exec_salary_struct.id, "name": "Leave / Absence Deduction", "code": "LEAVE_DED", "category": "DEDUCTION", "sequence": 35, "computation": "python", "python_code": "round((BASIC / SCHEDULED_DAYS) * TIME_OFF_DAYS, 2) if SCHEDULED_DAYS > 0 else 0"},
+            {"salary_structure_id": exec_salary_struct.id, "name": "Gross Wage", "code": "GROSS", "category": "GROSS", "sequence": 40, "computation": "python", "python_code": "BASIC + HRA + EXEC - LEAVE_DED"},
             {"salary_structure_id": exec_salary_struct.id, "name": "Provident Fund", "code": "PF", "category": "DEDUCTION", "sequence": 50, "computation": "percentage", "percentage": 12.0, "percentage_base": "BASIC"},
             {"salary_structure_id": exec_salary_struct.id, "name": "Professional Tax", "code": "PT", "category": "DEDUCTION", "sequence": 60, "computation": "fixed", "fixed_amount": Decimal("200.00")},
             {"salary_structure_id": exec_salary_struct.id, "name": "Net Salary", "code": "NET", "category": "NET", "sequence": 70, "computation": "python", "python_code": "GROSS - PF - PT"},
+
+            # Hourly & Part-Time Structure
+            {"salary_structure_id": hourly_salary_struct.id, "name": "Base Hourly Rate", "code": "HOURLY_RATE", "category": "ALLOWANCE", "sequence": 5, "computation": "fixed", "fixed_amount": Decimal("600.00")},
+            {"salary_structure_id": hourly_salary_struct.id, "name": "Basic Salary (Hours Worked)", "code": "BASIC", "category": "BASIC", "sequence": 10, "computation": "python", "python_code": "round(HOURLY_RATE * min(WORKED_HOURS, SCHEDULED_HOURS), 2)"},
+            {"salary_structure_id": hourly_salary_struct.id, "name": "Overtime Allowance", "code": "OVERTIME", "category": "ALLOWANCE", "sequence": 20, "computation": "python", "python_code": "round(HOURLY_RATE * 1.5 * max(0, WORKED_HOURS - SCHEDULED_HOURS), 2)"},
+            {"salary_structure_id": hourly_salary_struct.id, "name": "Gross Wage", "code": "GROSS", "category": "GROSS", "sequence": 40, "computation": "python", "python_code": "BASIC + OVERTIME"},
+            {"salary_structure_id": hourly_salary_struct.id, "name": "Professional Tax", "code": "PT", "category": "DEDUCTION", "sequence": 60, "computation": "fixed", "fixed_amount": Decimal("200.00")},
+            {"salary_structure_id": hourly_salary_struct.id, "name": "Net Salary", "code": "NET", "category": "NET", "sequence": 70, "computation": "python", "python_code": "GROSS - PT"},
         ]
         for r in rules_data:
             db.add(SalaryRule(**r))
@@ -492,7 +507,6 @@ async def seed_data():
                 "job_position": "Payroll Specialist",
                 "start_date": date(2025, 1, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("85000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -505,7 +519,6 @@ async def seed_data():
                 "job_position": "Head of HR",
                 "start_date": date(2024, 6, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("135000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": exec_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -518,9 +531,8 @@ async def seed_data():
                 "job_position": "Lead Developer",
                 "start_date": date(2024, 8, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("125000.00"),
                 "working_schedule_id": std_schedule.id,
-                "salary_structure_id": exec_salary_struct.id,
+                "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
                 "notes": "Senior engineering contract",
             },
@@ -531,7 +543,6 @@ async def seed_data():
                 "job_position": "Technical Recruiter",
                 "start_date": date(2025, 2, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("65000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -544,7 +555,6 @@ async def seed_data():
                 "job_position": "Financial Analyst",
                 "start_date": date(2025, 3, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("70000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -557,11 +567,10 @@ async def seed_data():
                 "job_position": "DevOps Specialist",
                 "start_date": date(2025, 4, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("95000.00"),
-                "working_schedule_id": std_schedule.id,
-                "salary_structure_id": std_salary_struct.id,
+                "working_schedule_id": part_schedule.id,
+                "salary_structure_id": hourly_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
-                "notes": "Cloud & Infrastructure lead contract",
+                "notes": "Hourly and part-time DevOps infrastructure contract",
             },
             {
                 "reference": "CON/2026/0007",
@@ -570,7 +579,6 @@ async def seed_data():
                 "job_position": "Payroll Controller",
                 "start_date": date(2025, 1, 15),
                 "end_date": None,
-                "wage_monthly": Decimal("90000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -583,7 +591,6 @@ async def seed_data():
                 "job_position": "Senior Payroll Specialist",
                 "start_date": date(2025, 2, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("75000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -596,9 +603,8 @@ async def seed_data():
                 "job_position": "Marketing Director",
                 "start_date": date(2024, 7, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("140000.00"),
                 "working_schedule_id": std_schedule.id,
-                "salary_structure_id": exec_salary_struct.id,
+                "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
                 "notes": "Marketing leadership employment contract",
             },
@@ -609,7 +615,6 @@ async def seed_data():
                 "job_position": "Enterprise Account Executive",
                 "start_date": date(2025, 3, 15),
                 "end_date": None,
-                "wage_monthly": Decimal("80000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -622,7 +627,6 @@ async def seed_data():
                 "job_position": "Head of Operations",
                 "start_date": date(2024, 5, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("130000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": exec_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -635,7 +639,6 @@ async def seed_data():
                 "job_position": "Logistics & Facilities Coordinator",
                 "start_date": date(2025, 5, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("60000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -648,7 +651,6 @@ async def seed_data():
                 "job_position": "Frontend UI/UX Engineer",
                 "start_date": date(2025, 6, 1),
                 "end_date": None,
-                "wage_monthly": Decimal("85000.00"),
                 "working_schedule_id": std_schedule.id,
                 "salary_structure_id": std_salary_struct.id,
                 "status": ContractStatus.RUNNING.value,
@@ -861,6 +863,19 @@ async def seed_data():
                     )
                 )
 
+        # August 2026 attendance for Vikram Malhotra (Hourly & Part-Time contractor: 80 hours total)
+        for day_num in [3, 5, 7, 10, 12, 14, 17, 19, 21, 24]:
+            db.add(
+                AttendanceRecord(
+                    employee_id=vikram.id,
+                    check_in=datetime(2026, 8, day_num, 9, 0, 0, tzinfo=timezone.utc),
+                    check_out=datetime(2026, 8, day_num, 17, 0, 0, tzinfo=timezone.utc),
+                    worked_hours=8.0,
+                    overtime_hours=0.0,
+                    notes="Part-time DevOps engineering shift",
+                )
+            )
+
         # TODAY'S ATTENDANCE:
         # Aarav Mehta is currently CHECKED IN (check_out is None)
         today_check_in = datetime(today.year, today.month, today.day, 9, 15, 0, tzinfo=timezone.utc)
@@ -927,21 +942,79 @@ async def seed_data():
         db.add(payrun)
         await db.flush()
 
-        # Create detailed payslips for Sara, Aarav, John, Neha, Priya, Pooja, Ananya, Devraj
-        for emp in [sara, aarav, john, neha, priya, pooja, ananya, devraj]:
+        # Create detailed payslips for Sara, Aarav, John, Neha, Priya, Pooja, Ananya, Devraj, Vikram
+        # Calculated via salary structures, rules, attendance hours & time off
+        payrun_employees = [sara, aarav, john, neha, priya, pooja, ananya, devraj, vikram]
+        for emp in payrun_employees:
             contract = created_contracts.get(emp.id)
-            basic = contract.wage_monthly if contract else Decimal("50000.00")
-            is_exec = contract.salary_structure_id == exec_salary_struct.id if contract else False
-            struct_id = exec_salary_struct.id if is_exec else std_salary_struct.id
-            hra_pct = Decimal("0.50") if is_exec else Decimal("0.40")
-            hra = (basic * hra_pct).quantize(Decimal("0.01"))
-            allowance_name = "Executive Allowance" if is_exec else "Special Allowance"
-            allowance_code = "EXEC" if is_exec else "SPECIAL"
-            allowance_amt = Decimal("30000.00") if is_exec else Decimal("15000.00")
-            gross = basic + hra + allowance_amt
-            pf = (basic * Decimal("0.12")).quantize(Decimal("0.01"))
-            pt = Decimal("200.00")
-            net = gross - pf - pt
+            struct_id = contract.salary_structure_id if contract and contract.salary_structure_id else std_salary_struct.id
+            
+            if struct_id == exec_salary_struct.id:
+                # Executive Leadership Structure
+                basic = Decimal("90000.00")
+                hra = Decimal("45000.00")
+                allowance_name = "Executive Allowance"
+                allowance_code = "EXEC"
+                allowance_amt = Decimal("35000.00")
+                gross = basic + hra + allowance_amt
+                pf = Decimal("10800.00")
+                pt = Decimal("200.00")
+                net = gross - pf - pt
+                worked_days = 22
+                lines_data = [
+                    ("Basic Salary", "BASIC", "BASIC", basic, 10),
+                    ("House Rent Allowance", "HRA", "ALLOWANCE", hra, 20),
+                    (allowance_name, allowance_code, "ALLOWANCE", allowance_amt, 30),
+                    ("Gross Wage", "GROSS", "GROSS", gross, 40),
+                    ("Provident Fund", "PF", "DEDUCTION", pf, 50),
+                    ("Professional Tax", "PT", "DEDUCTION", pt, 60),
+                    ("Net Salary", "NET", "NET", net, 70),
+                ]
+            elif struct_id == hourly_salary_struct.id:
+                # Hourly & Part-Time Structure (80 worked hours @ 600/hr)
+                basic = Decimal("48000.00")
+                gross = basic
+                pt = Decimal("200.00")
+                net = gross - pt
+                worked_days = 10
+                lines_data = [
+                    ("Hourly Base Wage", "BASIC", "BASIC", basic, 10),
+                    ("Overtime Wage", "OVERTIME", "ALLOWANCE", Decimal("0.00"), 20),
+                    ("Gross Wage", "GROSS", "GROSS", gross, 30),
+                    ("Professional Tax", "PT", "DEDUCTION", pt, 40),
+                    ("Net Salary", "NET", "NET", net, 50),
+                ]
+            else:
+                # Standard Indian Tech Structure
+                basic = Decimal("50000.00")
+                hra = Decimal("20000.00")
+                allowance_name = "Special Allowance"
+                allowance_code = "SPECIAL"
+                allowance_amt = Decimal("15000.00")
+                
+                # Check if employee had approved time off in August (e.g. Ananya had 2 days)
+                time_off_days = Decimal("2.0") if emp.id == ananya.id else Decimal("0.0")
+                worked_days = 20 if emp.id == ananya.id else 22
+                leave_ded = (round((basic / Decimal("22")) * time_off_days, 2)).quantize(Decimal("0.01")) if time_off_days > 0 else Decimal("0.00")
+                
+                gross = basic + hra + allowance_amt - leave_ded
+                pf = Decimal("6000.00")
+                pt = Decimal("200.00")
+                net = gross - pf - pt
+
+                lines_data = [
+                    ("Basic Salary", "BASIC", "BASIC", basic, 10),
+                    ("House Rent Allowance", "HRA", "ALLOWANCE", hra, 20),
+                    (allowance_name, allowance_code, "ALLOWANCE", allowance_amt, 30),
+                ]
+                if leave_ded > 0:
+                    lines_data.append(("Unpaid / Time Off Deduction", "LEAVE_DED", "DEDUCTION", leave_ded, 35))
+                lines_data.extend([
+                    ("Gross Wage", "GROSS", "GROSS", gross, 40),
+                    ("Provident Fund", "PF", "DEDUCTION", pf, 50),
+                    ("Professional Tax", "PT", "DEDUCTION", pt, 60),
+                    ("Net Salary", "NET", "NET", net, 70),
+                ])
 
             payslip = Payslip(
                 payrun_id=payrun.id,
@@ -950,7 +1023,7 @@ async def seed_data():
                 contract_id=contract.id if contract else None,
                 date_from=date(2026, 8, 1),
                 date_to=date(2026, 8, 31),
-                worked_days=22,
+                worked_days=worked_days,
                 basic_wage=basic,
                 gross_wage=gross,
                 net_wage=net,
@@ -961,13 +1034,15 @@ async def seed_data():
             await db.flush()
 
             lines = [
-                PayslipLine(payslip_id=payslip.id, rule_name="Basic Salary", code="BASIC", category="BASIC", amount=basic, sequence=10),
-                PayslipLine(payslip_id=payslip.id, rule_name="House Rent Allowance", code="HRA", category="ALLOWANCE", amount=hra, sequence=20),
-                PayslipLine(payslip_id=payslip.id, rule_name=allowance_name, code=allowance_code, category="ALLOWANCE", amount=allowance_amt, sequence=30),
-                PayslipLine(payslip_id=payslip.id, rule_name="Gross Wage", code="GROSS", category="GROSS", amount=gross, sequence=40),
-                PayslipLine(payslip_id=payslip.id, rule_name="Provident Fund", code="PF", category="DEDUCTION", amount=pf, sequence=50),
-                PayslipLine(payslip_id=payslip.id, rule_name="Professional Tax", code="PT", category="DEDUCTION", amount=pt, sequence=60),
-                PayslipLine(payslip_id=payslip.id, rule_name="Net Salary", code="NET", category="NET", amount=net, sequence=70),
+                PayslipLine(
+                    payslip_id=payslip.id,
+                    rule_name=name,
+                    code=code,
+                    category=cat,
+                    amount=amt,
+                    sequence=seq
+                )
+                for name, code, cat, amt, seq in lines_data
             ]
             db.add_all(lines)
 
