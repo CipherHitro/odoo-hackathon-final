@@ -206,6 +206,13 @@ button {
   cursor: pointer;
 }
 
+.page-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 /* ═══════════════════════════════════════════════
    FORM CONTROLS & INPUTS (00-foundations.md §5)
    ═══════════════════════════════════════════════ */
