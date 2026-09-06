@@ -15,7 +15,7 @@ import {
   Zap,
   Settings,
 } from 'lucide-react';
-import { getCurrentUser, logoutUser } from '../api/auth';
+import { useAuth } from '../context/AuthContext';
 import { 
   isAdmin, 
   UserRole,
@@ -31,21 +31,16 @@ import {
 } from '../utils/rbac';
 
 const Navbar = ({ activeModule: explicitActiveModule }) => {
+  const { currentUser: user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [user, setUser] = useState(null);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [isTogglingAttendance, setIsTogglingAttendance] = useState(false);
   const navRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
-    getCurrentUser()
-      .then((data) => {
-        if (isMounted && data) setUser(data);
-      })
-      .catch(() => { });
 
     const fetchAttendanceStatus = () => {
       fetch('/attendance/widget')
@@ -119,7 +114,7 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      await logout();
     } catch {
       // Proceed with navigation
     } finally {
@@ -146,7 +141,7 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
   };
 
   const getUserInitials = () => {
-    if (!user?.name) return 'U';
+    if (!user?.name) return user?.email ? user.email.slice(0, 2).toUpperCase() : '--';
     const parts = user.name.trim().split(' ');
     if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     return user.name.slice(0, 2).toUpperCase();
@@ -389,13 +384,15 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
             {openDropdown === 'user' && (
               <div className="navbar-dropdown-menu navbar-dropdown-right user-dropdown-menu">
                 <div className="user-dropdown-header">
-                  <div className="user-dropdown-name font-display">{user?.name || 'User'}</div>
-                  <div className="user-dropdown-email">{user?.email || 'user@company.com'}</div>
-                  <div style={{ marginTop: '8px' }}>
-                    <span className="role-pill">
-                      {user?.role ? user.role.replace('_', ' ').toUpperCase() : 'USER'}
-                    </span>
-                  </div>
+                  <div className="user-dropdown-name font-display">{user?.name || user?.email || 'User'}</div>
+                  <div className="user-dropdown-email">{user?.email || ''}</div>
+                  {user?.role && (
+                    <div style={{ marginTop: '8px' }}>
+                      <span className="role-pill">
+                        {user.role.replace('_', ' ').toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="dropdown-divider" />

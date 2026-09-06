@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Mail, Lock, KeyRound, CheckCircle2, AlertCircle, Clock, ArrowLeft } from "lucide-react";
-import { loginUser, forgotPassword, verifyOtp, resetPassword } from "../api/auth";
-import { useNavigate } from "react-router-dom";
+import { forgotPassword, verifyOtp, resetPassword } from "../api/auth";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const AuthCard = () => {
+  const { login } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   // mode can be: 'login', 'forgot-password', 'verify-otp', 'reset-password'
   const [mode, setMode] = useState('login');
+
 
   const [formData, setFormData] = useState({
     email: "",
@@ -19,7 +25,6 @@ const AuthCard = () => {
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(600);
   const [canResend, setCanResend] = useState(false);
-  const navigate = useNavigate();
 
   // 10-minute OTP countdown timer
   useEffect(() => {
@@ -85,8 +90,9 @@ const AuthCard = () => {
 
     try {
       if (mode === 'login') {
-        await loginUser({ email: formData.email, password: formData.password });
-        navigate("/dashboard");
+        await login({ email: formData.email, password: formData.password });
+        const destination = location.state?.from?.pathname || "/dashboard";
+        navigate(destination, { replace: true });
       } else if (mode === 'forgot-password') {
         await forgotPassword(formData.email);
         setTimer(600);

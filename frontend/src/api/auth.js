@@ -135,13 +135,26 @@ export const getCurrentUser = async () => {
       }
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.detail || 'Failed to fetch user');
+    if (response.status === 401) {
+      const err = new Error('Not authenticated');
+      err.status = 401;
+      throw err;
     }
 
-    return data;
+    if (!response.ok) {
+      let detail = 'Failed to fetch user';
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        detail = `Server error (${response.status})`;
+      }
+      const err = new Error(detail);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
   } catch (error) {
     throw error;
   }
