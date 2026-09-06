@@ -112,8 +112,20 @@ const ContractList = ({ contracts, onSelectContract }) => {
                       <div style={{ fontWeight: '600', color: 'var(--ink)' }}>
                         {contract.employee_name || `Employee #${contract.employee_id}`}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {contract.job_position || contract.department_name || 'Staff Member'}
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span>{contract.job_position || contract.department_name || 'Staff Member'}</span>
+                        {contract.salary_structure_name && (
+                          <span style={{
+                            fontSize: '10px',
+                            background: 'rgba(99, 102, 241, 0.08)',
+                            color: '#4f46e5',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            fontWeight: 500,
+                          }}>
+                            {contract.salary_structure_name}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

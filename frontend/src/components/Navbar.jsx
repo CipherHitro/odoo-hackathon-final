@@ -26,7 +26,6 @@ import {
   canManageSchedules, 
   canManageTimeOff, 
   canAccessPayroll, 
-  canViewSalaryStructures,
   canViewPayrollAdminTabs,
   canAccessPayrollModule
 } from '../utils/rbac';
@@ -94,7 +93,7 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
     if (path.startsWith('/employees') || path.startsWith('/departments') || path.startsWith('/working-schedules')) {
       return 'employees';
     }
-    if (path.startsWith('/contracts') || path.startsWith('/salary-structures')) {
+    if (path.startsWith('/contracts')) {
       return 'contracts';
     }
     if (path.startsWith('/attendance')) {
@@ -210,41 +209,16 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
               )}
             </div>
 
-            {/* 2. Contracts Dropdown - Hidden for regular Employees per permission.txt */}
+            {/* 2. Contracts Direct Link - Hidden for regular Employees per permission.txt */}
             {canManageContracts(user) && (
               <div className={`navbar-item ${active === 'contracts' ? 'is-active' : ''}`}>
-                <button
-                  type="button"
+                <NavLink
+                  to="/contracts"
                   className="navbar-tab-button"
-                  onClick={() => toggleDropdown('contracts')}
-                  aria-expanded={openDropdown === 'contracts'}
+                  onClick={() => setOpenDropdown(null)}
                 >
                   <span>Contracts</span>
-                  <ChevronDown size={13} className={`dropdown-chevron ${openDropdown === 'contracts' ? 'is-rotated' : ''}`} />
-                </button>
-
-                {openDropdown === 'contracts' && (
-                  <div className="navbar-dropdown-menu">
-                    <NavLink
-                      to="/contracts"
-                      className="navbar-dropdown-link"
-                      onClick={() => setOpenDropdown(null)}
-                    >
-                      <Briefcase size={15} />
-                      <span>All Contracts</span>
-                    </NavLink>
-                    {canViewSalaryStructures(user) && (
-                      <NavLink
-                        to="/salary-structures"
-                        className="navbar-dropdown-link"
-                        onClick={() => setOpenDropdown(null)}
-                      >
-                        <FileText size={15} />
-                        <span>Salary Structures</span>
-                      </NavLink>
-                    )}
-                  </div>
-                )}
+                </NavLink>
               </div>
             )}
 
@@ -341,10 +315,6 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
                     <NavLink to="/payroll/payslips" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
                       <FileText size={15} />
                       <span>Payslips</span>
-                    </NavLink>
-                    <NavLink to="/payroll/structures" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
-                      <Layers size={15} />
-                      <span>Structures {user?.role === UserRole.HR_PAYROLL_USER ? '(Read-only)' : ''}</span>
                     </NavLink>
                     <NavLink to="/payroll/rules" className="navbar-dropdown-link" onClick={() => setOpenDropdown(null)}>
                       <Settings size={15} />

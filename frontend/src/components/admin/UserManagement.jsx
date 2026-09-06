@@ -285,7 +285,7 @@ const UserManagement = () => {
           </div>
 
           <div className="role-filter-group">
-            <Filter size={14} style={{ color: 'var(--text-secondary)', marginRight: '6px' }} />
+            <Filter size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             <select
               className="filter-select"
               value={roleFilter}

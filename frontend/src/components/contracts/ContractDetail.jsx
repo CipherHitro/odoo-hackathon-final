@@ -10,7 +10,8 @@ import {
   Building2,
   Briefcase,
   Clock,
-  Trash2
+  Trash2,
+  Layers
 } from 'lucide-react';
 import { canEditContracts } from '../../utils/rbac';
 import { createContract, updateContract, deleteContract } from '../../api/contracts';
@@ -51,6 +52,33 @@ const ContractDetail = ({
     status: contract?.status ? contract.status.toLowerCase() : 'draft',
     notes: contract?.notes || '',
   });
+
+  useEffect(() => {
+    if (contract) {
+      setFormData({
+        employee_id: contract.employee_id ? String(contract.employee_id) : (employees[0]?.id ? String(employees[0].id) : ''),
+        department_id: contract.department_id ? String(contract.department_id) : '',
+        job_position: contract.job_position || '',
+        start_date: contract.start_date || new Date().toISOString().split('T')[0],
+        end_date: contract.end_date || '',
+        wage_monthly: contract.wage_monthly !== undefined ? String(contract.wage_monthly) : '50000',
+        working_schedule_id: contract.working_schedule_id ? String(contract.working_schedule_id) : (schedules[0]?.id ? String(schedules[0].id) : ''),
+        salary_structure_id: contract.salary_structure_id ? String(contract.salary_structure_id) : (structures[0]?.id ? String(structures[0].id) : ''),
+        status: contract.status ? contract.status.toLowerCase() : 'draft',
+        notes: contract.notes || '',
+      });
+      setIsEditing(!contract.id);
+    }
+  }, [contract]);
+
+  useEffect(() => {
+    if (!formData.salary_structure_id && structures.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        salary_structure_id: prev.salary_structure_id || String(structures[0].id),
+      }));
+    }
+  }, [structures]);
 
   const canEdit = canEditContracts(currentUser);
 
@@ -395,34 +423,58 @@ const ContractDetail = ({
                   ))}
                 </select>
               </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="salary_structure_id">
+                  Salary Structure <span style={{ color: 'var(--coral)' }}>*</span>
+                </label>
+                <select
+                  id="salary_structure_id"
+                  name="salary_structure_id"
+                  disabled={!isEditing}
+                  className="form-control"
+                  value={formData.salary_structure_id}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">-- Select Salary Structure --</option>
+                  {structures.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* Salary Structure / Notes Panel below the grid per 02-contracts.md */}
+          {/* Salary Structure Info & Notes Panel */}
           <div style={{ marginTop: '24px' }}>
-            <div className="salary-structure-box">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span className="salary-structure-title">
-                  Structure Type: {currentStructure?.name || contract?.salary_structure_name || 'Standard Full-Time Employee Structure'}
-                </span>
-                {isEditing && (
-                  <select
-                    name="salary_structure_id"
-                    value={formData.salary_structure_id}
-                    onChange={handleChange}
-                    className="form-control"
-                    style={{ width: 'auto', background: 'var(--card)', padding: '0.4rem 0.75rem', fontSize: '0.8125rem' }}
-                  >
-                    {structures.map(st => (
-                      <option key={st.id} value={st.id}>
-                        {st.name}
-                      </option>
-                    ))}
-                  </select>
+            <div className="salary-structure-box" style={{
+              padding: '16px 20px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              background: 'var(--bg-subtle, #f8fafc)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Layers size={18} color="var(--primary, #6366f1)" />
+                  <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary, #0f172a)' }}>
+                    Salary Structure: {currentStructure?.name || contract?.salary_structure_name || 'Standard Full-Time Employee Structure'}
+                  </span>
+                </div>
+                {isEditing ? (
+                  <span style={{ fontSize: '0.75rem', color: '#4338ca', background: '#e0e7ff', padding: '3px 8px', borderRadius: '6px', fontWeight: 600 }}>
+                    Select structure above to change
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #64748b)', background: 'var(--card, #ffffff)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border, #e2e8f0)' }}>
+                    Managed with Contract
+                  </span>
                 )}
               </div>
-              <p className="salary-structure-note">
-                Applies standard automated salary rule computations: Basic 50%, HRA 20%, Standard Allowance, PF Deductions (12%), and Professional Tax. Rule formulation is managed in Payroll → Salary Structures.
+              <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.5 }}>
+                {currentStructure?.notes || 'Applies automated salary rule computations for this contract (Basic wage, allowances, deductions, and gross/net calculations). Configured according to the selected structure.'}
               </p>
             </div>
 
