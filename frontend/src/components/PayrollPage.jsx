@@ -1727,15 +1727,22 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
   return (
     <div>
       {/* Top Breadcrumb Nav Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button type="button" className="btn btn-outline btn-sm" onClick={onBack}>
-            <ArrowLeft size={14} />
-            <span>Back to Payruns</span>
-          </button>
+      {/* Top Header & Workflow Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div>
             <h1 className="page-title font-display" style={{ margin: 0, fontSize: '1.375rem' }}>
-              Payrun / {payrun.name}
+              <span
+                style={{ color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.15s ease' }}
+                onClick={onBack}
+                title="Click to return to Pay Runs"
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--coral)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+              >
+                Payrun
+              </span>{' '}
+              <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/</span>{' '}
+              {payrun.name}
             </h1>
             <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
               Period: {fmtDate(payrun.date_from)} – {fmtDate(payrun.date_to)}
@@ -1744,7 +1751,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
           <StatusPill status={status} />
         </div>
 
-        <div className="page-actions-group">
+        <div className="page-actions-group" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           {!canManagePayruns(currentUser) && (
             <span className="status-pill status-pill-neutral">
               <Eye size={13} style={{ marginRight: 4 }} />
@@ -1795,12 +1802,13 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
           )}
 
           {canManagePayruns(currentUser) && (
-            <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <button
                 type="button"
                 className={canCompute ? 'btn-coral' : 'btn btn-outline'}
                 disabled={!canCompute || acting}
                 onClick={() => doAction(() => computePayrun(payrun.id), 'Compute')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
                 <Zap size={14} />
                 <span>Compute</span>
@@ -1811,6 +1819,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
                 className={canValidate ? 'btn-coral' : 'btn btn-outline'}
                 disabled={!canValidate || acting}
                 onClick={() => doAction(() => validatePayrun(payrun.id), 'Validate')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
                 <CheckCircle2 size={14} />
                 <span>Validate</span>
@@ -1821,6 +1830,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
                 className={canPaid ? 'btn-coral' : 'btn btn-outline'}
                 disabled={!canPaid || acting}
                 onClick={() => doAction(() => markPayrunPaid(payrun.id), 'Mark Paid')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
                 <Check size={14} />
                 <span>Mark Paid</span>
@@ -1829,13 +1839,13 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
               <button
                 type="button"
                 className="btn btn-outline"
-                style={{ background: 'var(--sky)', color: '#fff', borderColor: 'var(--sky)' }}
+                style={{ background: 'var(--sky)', color: '#fff', borderColor: 'var(--sky)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 onClick={() => setToast('Payslips generated & dispatched to employees.')}
               >
                 <Mail size={14} />
                 <span>Send Payslips</span>
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
