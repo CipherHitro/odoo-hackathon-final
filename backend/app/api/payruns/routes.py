@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
 from app.api.deps import require_roles, get_current_user
 from app.models.user import User, UserRole
 from app.api.payruns.controller import PayrunController
 from app.schemas.payrun import (
-    PayrunCreate, PayrunUpdate, PayrunResponse, PayrunComputePayload, AssignContractPayload
+    PayrunCreate, PayrunUpdate, PayrunResponse, PayrunComputePayload, AssignContractPayload, SendPayslipsPayload
 )
+
 
 router = APIRouter(prefix="/payruns", tags=["Payruns & Payroll Engine"])
 
@@ -59,4 +60,13 @@ async def delete_payslip(payrun_id: int, payslip_id: int, db: AsyncSession = Dep
 @router.post("/{payrun_id}/payslips/{payslip_id}/assign-contract", response_model=PayrunResponse, dependencies=[Depends(require_roles(*MANAGE_ROLES))])
 async def assign_contract(payrun_id: int, payslip_id: int, payload: AssignContractPayload, db: AsyncSession = Depends(get_db)):
     return await PayrunController.assign_contract(db, payrun_id, payslip_id, payload.contract_id)
+
+@router.post("/{payrun_id}/send-payslips", dependencies=[Depends(require_roles(*MANAGE_ROLES))])
+async def send_payrun_payslips(
+    payrun_id: int,
+    payload: Optional[SendPayslipsPayload] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    return await PayrunController.send_payslips(db, payrun_id, payload)
+
 

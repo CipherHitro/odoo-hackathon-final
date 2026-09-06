@@ -178,3 +178,18 @@ export const assignContractToPayslip = async (payrunId, payslipId, contractId) =
   return res.json();
 };
 
+export const sendPayrunPayslips = async (payrunId, options = {}) => {
+  const res = await fetch(`/payruns/${payrunId}/send-payslips`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      use_demo_emails: !!options.useDemoEmails,
+      custom_emails: options.customEmails || null,
+    }),
+  });
+  if (!res.ok) throw new Error(extractErrorMessage(await res.json().catch(() => ({})), "Failed to send payslip emails"));
+  return res.json();
+};
+
+

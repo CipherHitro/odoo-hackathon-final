@@ -30,6 +30,8 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid,
 } from 'recharts';
+import SendPayslipsModal from './payroll/SendPayslipsModal';
+
 
 // ─── Formatters & Utility Helpers ─────────────────────────────────────────────
 const fmt = (n) =>
@@ -1119,6 +1121,7 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
   const [toast, setToast] = useState(null);
   const [expandedSlip, setExpandedSlip] = useState(null);
   const [showEdit, setShowEdit] = useState(false);
+  const [showSendMail, setShowSendMail] = useState(false);
   const [structures, setStructures] = useState([]);
 
   useEffect(() => {
@@ -1304,11 +1307,18 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
               <button
                 type="button"
                 className="btn btn-outline"
-                style={{ background: 'var(--sky)', color: '#fff', borderColor: 'var(--sky)' }}
-                onClick={() => setToast('Payslips generated & dispatched to employees.')}
+                style={{
+                  background: status === 'paid' ? 'var(--sky, #0284c7)' : 'rgba(2, 132, 199, 0.08)',
+                  color: status === 'paid' ? '#fff' : 'var(--sky, #0284c7)',
+                  borderColor: 'var(--sky, #0284c7)',
+                  fontWeight: 600,
+                }}
+                disabled={acting || (payrun.payslips || []).length === 0}
+                onClick={() => setShowSendMail(true)}
+                title="Send official payment slips with PDF attachments to employees via email"
               >
                 <Mail size={14} />
-                <span>Send Payslips</span>
+                <span>Send Mail</span>
               </button>
             </>
           )}
@@ -1335,6 +1345,16 @@ const PayrunDetail = ({ payrunId, onBack, onRefresh, currentUser }) => {
           structures={structures}
           onClose={() => setShowEdit(false)}
           onUpdated={() => { setShowEdit(false); setToast('Payrun updated.'); load(); onRefresh(); }}
+        />
+      )}
+
+      {showSendMail && (
+        <SendPayslipsModal
+          payrun={payrun}
+          onClose={() => setShowSendMail(false)}
+          onSent={(res) => {
+            setToast(`Payslip emails dispatched: ${res.sent} sent successfully${res.failed > 0 ? `, ${res.failed} failed` : ''}.`);
+          }}
         />
       )}
 

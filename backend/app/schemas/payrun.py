@@ -73,3 +73,8 @@ class PayrunComputePayload(BaseModel):
 
 class AssignContractPayload(BaseModel):
     contract_id: int
+
+class SendPayslipsPayload(BaseModel):
+    use_demo_emails: Optional[bool] = False
+    custom_emails: Optional[List[str]] = None
+

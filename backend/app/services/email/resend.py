@@ -10,6 +10,7 @@ async def send_email(
     to: str | list[str],
     subject: str,
     html: str,
+    attachments: list[dict] | None = None,
 ):
     if isinstance(to, str):
         to = [to]
@@ -21,5 +22,9 @@ async def send_email(
         "html": html,
     }
 
+    if attachments:
+        params["attachments"] = attachments
+
     return await resend.Emails.send_async(params)
+
 

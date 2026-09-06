@@ -2,7 +2,10 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from typing import List
-from app.schemas.payrun import PayrunCreate, PayrunUpdate, PayrunResponse, PayrunComputePayload
+from app.schemas.payrun import (
+    PayrunCreate, PayrunUpdate, PayrunResponse, PayrunComputePayload, SendPayslipsPayload
+)
+
 from app.api.payruns.service import PayrunService
 from app.models.employee import Employee
 from app.models.user import User, UserRole
@@ -105,4 +108,29 @@ class PayrunController:
             return PayrunResponse.model_validate(payrun)
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    @staticmethod
+    async def send_payslips(
+        db: AsyncSession,
+        payrun_id: int,
+        payload: "SendPayslipsPayload | None" = None,
+    ) -> dict:
+        from app.services.payroll_email_service import PayrollEmailService
+
+        use_demo = payload.use_demo_emails if payload else False
+        custom_emails = payload.custom_emails if payload else None
+
+        try:
+            result = await PayrollEmailService.send_payrun_payslips(
+                db=db,
+                payrun_id=payrun_id,
+                use_demo_emails=use_demo,
+                custom_emails=custom_emails,
+            )
+            return result
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Email dispatch failed: {str(e)}")
+
 
