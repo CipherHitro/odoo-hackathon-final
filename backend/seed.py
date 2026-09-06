@@ -636,9 +636,9 @@ async def seed_data():
 
         alloc_map: dict[tuple[int, int], TimeOffAllocation] = {}
 
-        def pto_days(emp_id): return 24.0 if emp_id in exec_emps else (20.0 if emp_id in senior_emps else 18.0)
-        def sick_days(emp_id): return 12.0 if emp_id in exec_emps else 10.0
-        def casual_days(emp_id): return 14.0 if emp_id in exec_emps else (12.0 if emp_id in senior_emps else 10.0)
+        def pto_days(emp_id): return 14.0 if emp_id in exec_emps else (12.0 if emp_id in senior_emps else 10.0)
+        def sick_days(emp_id): return 10.0 if emp_id in exec_emps else (8.0 if emp_id in senior_emps else 7.0)
+        def casual_days(emp_id): return 10.0 if emp_id in exec_emps else (8.0 if emp_id in senior_emps else 7.0)
 
         for emp in all_emps:
             a_pto = TimeOffAllocation(

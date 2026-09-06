@@ -83,6 +83,7 @@ const TimeOffPage = () => {
   const [allocations, setAllocations] = useState([]);
   const [types, setTypes] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [selectedBalanceEmployeeId, setSelectedBalanceEmployeeId] = useState('');
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,6 +130,21 @@ const TimeOffPage = () => {
   });
 
   const isAdminOrHr = user && ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_admin'].includes(user.role);
+
+  const currentEmp = React.useMemo(() => {
+    if (!user) return null;
+    return employees.find(e => e.user_id === user.id || e.work_email === user.email) || null;
+  }, [user, employees]);
+
+  useEffect(() => {
+    if (!selectedBalanceEmployeeId && employees.length > 0) {
+      if (currentEmp) {
+        setSelectedBalanceEmployeeId(String(currentEmp.id));
+      } else {
+        setSelectedBalanceEmployeeId(String(employees[0].id));
+      }
+    }
+  }, [currentEmp, employees, selectedBalanceEmployeeId]);
 
   // Synchronize tab with URL when user navigates
   useEffect(() => {
@@ -385,10 +401,15 @@ const TimeOffPage = () => {
     return !q || t.name.toLowerCase().includes(q) || (t.notes && t.notes.toLowerCase().includes(q));
   });
 
-  // Aggregate balance cards by leave type so multiple allocations for the same leave type combine
+  // Aggregate balance cards by leave type for the active employee so allocations combine per leave type without summing company-wide
   const displayBalanceCards = React.useMemo(() => {
+    let relevantAllocs = allocations;
+    if (isAdminOrHr && selectedBalanceEmployeeId) {
+      relevantAllocs = allocations.filter(a => String(a.employee_id) === String(selectedBalanceEmployeeId));
+    }
+
     const map = new Map();
-    allocations.forEach((alloc) => {
+    relevantAllocs.forEach((alloc) => {
       const key = alloc.time_off_type_id || alloc.type_name;
       if (!map.has(key)) {
         map.set(key, {
@@ -409,9 +430,12 @@ const TimeOffPage = () => {
       if (alloc.status === 'approved') {
         item.status = 'approved';
       }
+      if (alloc.employee_name) {
+        item.employee_name = alloc.employee_name;
+      }
     });
     return Array.from(map.values());
-  }, [allocations]);
+  }, [allocations, isAdminOrHr, selectedBalanceEmployeeId]);
 
   return (
     <AppLayout activeModule="time-off">
@@ -482,9 +506,29 @@ const TimeOffPage = () => {
         {/* Leave Balances KPI Cards */}
         {displayBalanceCards.length > 0 && (
           <div style={{ marginBottom: '1.75rem' }}>
-            <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.75rem' }}>
-              {isAdminOrHr ? 'Overview of Active Leave Allocations' : 'My Leave Balances'}
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: 12 }}>
+              <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                {isAdminOrHr ? 'Leave Balances by Employee' : 'My Leave Balances'}
+              </h3>
+              {isAdminOrHr && employees.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <label htmlFor="select-balance-emp" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Employee:
+                  </label>
+                  <select
+                    id="select-balance-emp"
+                    value={selectedBalanceEmployeeId}
+                    onChange={(e) => setSelectedBalanceEmployeeId(e.target.value)}
+                    className="form-control"
+                    style={{ padding: '4px 10px', fontSize: '0.8125rem', height: '32px', width: 'auto', minWidth: '180px', borderRadius: '6px' }}
+                  >
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
             <div className="timeoff-balances-grid">
               {displayBalanceCards.map((alloc) => {
                 const rem = alloc.remaining_days;
