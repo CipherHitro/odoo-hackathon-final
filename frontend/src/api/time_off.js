@@ -60,7 +60,9 @@ export const getAllocations = async (params = {}) => {
     if (params.type_id) query.append('type_id', params.type_id);
     if (params.status) query.append('status', params.status);
     if (params.skip !== undefined) query.append('skip', params.skip);
-    if (params.limit !== undefined) query.append('limit', params.limit);
+    query.append('limit', params.limit !== undefined ? params.limit : 200);
+  } else {
+    query.append('limit', 200);
   }
 
   const queryString = query.toString() ? `?${query.toString()}` : '';

@@ -83,6 +83,7 @@ const TimeOffPage = () => {
   const [allocations, setAllocations] = useState([]);
   const [types, setTypes] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [selectedBalanceEmployeeId, setSelectedBalanceEmployeeId] = useState('');
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,6 +130,34 @@ const TimeOffPage = () => {
   });
 
   const isAdminOrHr = user && ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_admin'].includes(user.role);
+
+  const staffEmployees = React.useMemo(() => {
+    return employees.filter(e => e.work_email !== 'admin@oxp.com');
+  }, [employees]);
+  const staffCount = staffEmployees.length || 19;
+
+  const currentEmp = React.useMemo(() => {
+    if (!user) return null;
+    return employees.find(e => e.user_id === user.id || e.work_email === user.email) || null;
+  }, [user, employees]);
+
+  useEffect(() => {
+    if (!selectedBalanceEmployeeId && employees.length > 0) {
+      const currentHasAllocs = currentEmp && allocations.some(a => String(a.employee_id) === String(currentEmp.id));
+      if (currentHasAllocs) {
+        setSelectedBalanceEmployeeId(String(currentEmp.id));
+      } else {
+        const firstEmpWithAllocs = employees.find(e => allocations.some(a => String(a.employee_id) === String(e.id)));
+        if (firstEmpWithAllocs) {
+          setSelectedBalanceEmployeeId(String(firstEmpWithAllocs.id));
+        } else if (currentEmp) {
+          setSelectedBalanceEmployeeId(String(currentEmp.id));
+        } else {
+          setSelectedBalanceEmployeeId(String(employees[0].id));
+        }
+      }
+    }
+  }, [currentEmp, employees, allocations, selectedBalanceEmployeeId]);
 
   // Synchronize tab with URL when user navigates
   useEffect(() => {
@@ -276,6 +305,9 @@ const TimeOffPage = () => {
       });
 
       showToast('Leave allocation created successfully!');
+      if (allocForm.employee_id) {
+        setSelectedBalanceEmployeeId(String(allocForm.employee_id));
+      }
       handleCloseModal();
       setAllocForm({
         employee_id: employees.length > 0 ? employees[0].id : '',
@@ -385,10 +417,17 @@ const TimeOffPage = () => {
     return !q || t.name.toLowerCase().includes(q) || (t.notes && t.notes.toLowerCase().includes(q));
   });
 
-  // Aggregate balance cards by leave type so multiple allocations for the same leave type combine
+  // Aggregate balance cards by leave type for the active employee so allocations combine per leave type without summing company-wide
   const displayBalanceCards = React.useMemo(() => {
+    let relevantAllocs = allocations;
+    const isCompanyTotal = selectedBalanceEmployeeId === 'all';
+
+    if (isAdminOrHr && selectedBalanceEmployeeId && !isCompanyTotal) {
+      relevantAllocs = allocations.filter(a => String(a.employee_id) === String(selectedBalanceEmployeeId));
+    }
+
     const map = new Map();
-    allocations.forEach((alloc) => {
+    relevantAllocs.forEach((alloc) => {
       const key = alloc.time_off_type_id || alloc.type_name;
       if (!map.has(key)) {
         map.set(key, {
@@ -399,7 +438,7 @@ const TimeOffPage = () => {
           taken_days: 0,
           remaining_days: 0,
           status: alloc.status,
-          employee_name: alloc.employee_name,
+          employee_name: isCompanyTotal ? `Company Total (${staffCount} Employees)` : alloc.employee_name,
         });
       }
       const item = map.get(key);
@@ -409,9 +448,18 @@ const TimeOffPage = () => {
       if (alloc.status === 'approved') {
         item.status = 'approved';
       }
+      if (!isCompanyTotal && alloc.employee_name) {
+        item.employee_name = alloc.employee_name;
+      }
     });
     return Array.from(map.values());
-  }, [allocations]);
+  }, [allocations, isAdminOrHr, selectedBalanceEmployeeId, staffCount]);
+
+  const selectedEmpName = React.useMemo(() => {
+    if (selectedBalanceEmployeeId === 'all') return `Company Total (${staffCount} Employees)`;
+    const emp = employees.find(e => String(e.id) === String(selectedBalanceEmployeeId));
+    return emp ? emp.name : '';
+  }, [selectedBalanceEmployeeId, employees, staffCount]);
 
   return (
     <AppLayout activeModule="time-off">
@@ -480,11 +528,35 @@ const TimeOffPage = () => {
         </div>
 
         {/* Leave Balances KPI Cards */}
-        {displayBalanceCards.length > 0 && (
-          <div style={{ marginBottom: '1.75rem' }}>
-            <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.75rem' }}>
-              {isAdminOrHr ? 'Overview of Active Leave Allocations' : 'My Leave Balances'}
+        <div style={{ marginBottom: '1.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: 12 }}>
+            <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+              {isAdminOrHr
+                ? (selectedBalanceEmployeeId === 'all' ? `Company-wide Leave Summary` : `Leave Balances — ${selectedEmpName || 'Employee'}`)
+                : 'My Leave Balances'}
             </h3>
+            {isAdminOrHr && employees.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <label htmlFor="select-balance-emp" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Employee:
+                </label>
+                <select
+                  id="select-balance-emp"
+                  value={selectedBalanceEmployeeId}
+                  onChange={(e) => setSelectedBalanceEmployeeId(e.target.value)}
+                  className="form-control"
+                  style={{ padding: '4px 10px', fontSize: '0.8125rem', height: '32px', width: 'auto', minWidth: '220px', borderRadius: '6px' }}
+                >
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  ))}
+                  <option value="all">Company Total ({staffCount} Employees)</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          {displayBalanceCards.length > 0 ? (
             <div className="timeoff-balances-grid">
               {displayBalanceCards.map((alloc) => {
                 const rem = alloc.remaining_days;
@@ -521,8 +593,20 @@ const TimeOffPage = () => {
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div style={{
+              background: 'var(--surface)',
+              border: '1px dashed var(--border-color)',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              fontSize: '0.875rem'
+            }}>
+              No leave allocations assigned yet for {selectedEmpName || 'this employee'}.
+            </div>
+          )}
+        </div>
 
         {/* Sub-Navigation Tabs per 04-timeoff.md */}
         <div className="timeoff-tabs-bar">

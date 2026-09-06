@@ -193,7 +193,7 @@ class TimeOffService:
         db: AsyncSession,
         user: User,
         skip: int = 0,
-        limit: int = 50,
+        limit: int = 200,
         employee_id: int | None = None,
         type_id: int | None = None,
         status: str | None = None,

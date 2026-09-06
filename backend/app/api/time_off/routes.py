@@ -84,7 +84,7 @@ async def update_time_off_type(
 )
 async def list_allocations(
     skip: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=100),
+    limit: int = Query(default=200, ge=1, le=500),
     employee_id: int | None = Query(default=None),
     type_id: int | None = Query(default=None),
     status: str | None = Query(default=None),
