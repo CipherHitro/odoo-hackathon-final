@@ -15,16 +15,13 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { 
   isAdmin, 
-  UserRole,
   canManageEmployees, 
   canManageContracts, 
   canManageDepartments, 
   canViewDepartments,
   canManageSchedules, 
   canManageTimeOff, 
-  canAccessPayroll, 
-  canViewPayrollAdminTabs,
-  canAccessPayrollModule
+  canViewPayrollAdminTabs
 } from '../utils/rbac';
 
 const Navbar = ({ activeModule: explicitActiveModule }) => {
@@ -269,18 +266,7 @@ const Navbar = ({ activeModule: explicitActiveModule }) => {
               )}
             </div>
 
-            {/* 5. Payroll Navigation per permission.txt */}
-            {user?.role === UserRole.EMPLOYEE && (
-              <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
-                <NavLink
-                  to="/payroll/payslips"
-                  className="navbar-tab-button"
-                  onClick={() => setOpenDropdown(null)}
-                >
-                  <span>My Payslips</span>
-                </NavLink>
-              </div>
-            )}
+            {/* 5. Payroll Navigation (Admin / HR Payroll users only) */}
 
             {canViewPayrollAdminTabs(user) && (
               <div className={`navbar-item ${active === 'payroll' ? 'is-active' : ''}`}>
