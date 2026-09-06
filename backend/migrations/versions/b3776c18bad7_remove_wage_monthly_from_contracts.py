@@ -20,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.drop_constraint('check_positive_contract_wage', 'contracts', type_='check')
+    op.execute("ALTER TABLE contracts DROP CONSTRAINT IF EXISTS check_positive_contract_wage")
     op.drop_column('contracts', 'wage_monthly')
     op.create_unique_constraint('uq_payrun_employee', 'payslips', ['payrun_id', 'employee_id'])
 
