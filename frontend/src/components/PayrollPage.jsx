@@ -207,13 +207,12 @@ const DashboardTab = ({ data, loading, error }) => {
     color: getDepartmentColor(d.department_name),
   }));
 
-  // Real Status Split
+  // Real Status Split (Mutually exclusive lifecycle: Paid + Validated/Done + Pending/Draft)
   const statusSplit = data?.status_split || { paid: 0, done: 0, pending: 0, warning: 0 };
-  const splitTotal = (statusSplit.paid + statusSplit.done + statusSplit.pending + statusSplit.warning) || 0;
+  const splitTotal = (statusSplit.paid + statusSplit.done + statusSplit.pending) || 0;
   const paidPct = splitTotal > 0 ? Math.round((statusSplit.paid / splitTotal) * 100) : 0;
   const donePct = splitTotal > 0 ? Math.round((statusSplit.done / splitTotal) * 100) : 0;
-  const pendingPct = splitTotal > 0 ? Math.round((statusSplit.pending / splitTotal) * 100) : 0;
-  const warnPct = splitTotal > 0 ? Math.max(0, 100 - paidPct - donePct - pendingPct) : 0;
+  const pendingPct = splitTotal > 0 ? Math.max(0, 100 - paidPct - donePct) : 0;
 
   // Real Alerts
   const alerts = data?.current_alerts || [];
@@ -393,9 +392,8 @@ const DashboardTab = ({ data, loading, error }) => {
             ) : (
               <div className="dashboard-segmented-track">
                 {paidPct > 0 && <div className="dashboard-segment seg-paid" style={{ width: `${paidPct}%` }} title={`Paid: ${statusSplit.paid}`} />}
-                {donePct > 0 && <div className="dashboard-segment seg-done" style={{ width: `${donePct}%` }} title={`Done: ${statusSplit.done}`} />}
-                {pendingPct > 0 && <div className="dashboard-segment seg-pending" style={{ width: `${pendingPct}%` }} title={`Pending: ${statusSplit.pending}`} />}
-                {warnPct > 0 && <div className="dashboard-segment seg-warning" style={{ width: `${warnPct}%` }} title={`Warning: ${statusSplit.warning}`} />}
+                {donePct > 0 && <div className="dashboard-segment seg-done" style={{ width: `${donePct}%` }} title={`Validated: ${statusSplit.done}`} />}
+                {pendingPct > 0 && <div className="dashboard-segment seg-pending" style={{ width: `${pendingPct}%` }} title={`Draft: ${statusSplit.pending}`} />}
               </div>
             )}
 
@@ -406,16 +404,18 @@ const DashboardTab = ({ data, loading, error }) => {
               </span>
               <span className="dashboard-legend-item">
                 <span className="dashboard-legend-dot" style={{ background: '#38bdf8' }} />
-                <span>Done ({statusSplit.done})</span>
+                <span>Validated ({statusSplit.done})</span>
               </span>
               <span className="dashboard-legend-item">
                 <span className="dashboard-legend-dot" style={{ background: '#facc15' }} />
-                <span>Pending ({statusSplit.pending})</span>
+                <span>Draft ({statusSplit.pending})</span>
               </span>
-              <span className="dashboard-legend-item">
-                <span className="dashboard-legend-dot" style={{ background: '#f87171' }} />
-                <span>Warning ({statusSplit.warning})</span>
-              </span>
+              {statusSplit.warning > 0 && (
+                <span className="dashboard-legend-item">
+                  <span className="dashboard-legend-dot" style={{ background: '#f87171' }} />
+                  <span>Warnings ({statusSplit.warning})</span>
+                </span>
+              )}
             </div>
           </div>
 
@@ -449,29 +449,29 @@ const DashboardTab = ({ data, loading, error }) => {
         <div className="card" style={{ padding: '16px 18px' }}>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Attendance Overview</div>
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>Source: Attendance</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>Source: Biometric & Shift Records</div>
           </div>
 
           {/* Divided Stat Header */}
           <div className="dashboard-divided-stat">
-            <div className="dashboard-stat-col">
+            <div className="dashboard-stat-col" title="Completed shifts with 7+ hours">
               <div className="dashboard-stat-num">{attStats.present}</div>
-              <div className="dashboard-stat-lbl">Present</div>
+              <div className="dashboard-stat-lbl">Full Shifts</div>
               <div className="dashboard-tally-bar" style={{ background: '#38bdf8' }} />
             </div>
-            <div className="dashboard-stat-col">
+            <div className="dashboard-stat-col" title="Partial shifts under 7 hours">
               <div className="dashboard-stat-num">{attStats.late}</div>
-              <div className="dashboard-stat-lbl">Late</div>
+              <div className="dashboard-stat-lbl">Short Shifts</div>
               <div className="dashboard-tally-bar" style={{ background: '#facc15' }} />
             </div>
-            <div className="dashboard-stat-col">
+            <div className="dashboard-stat-col" title="Active staff with 0 logged shifts">
               <div className="dashboard-stat-num">{attStats.absent}</div>
-              <div className="dashboard-stat-lbl">Absent</div>
+              <div className="dashboard-stat-lbl">No Records</div>
               <div className="dashboard-tally-bar" style={{ background: '#f87171' }} />
             </div>
-            <div className="dashboard-stat-col">
+            <div className="dashboard-stat-col" title="Shifts with logged overtime">
               <div className="dashboard-stat-num">{attStats.overtime}</div>
-              <div className="dashboard-stat-lbl">Overtime</div>
+              <div className="dashboard-stat-lbl">OT Shifts</div>
               <div className="dashboard-tally-bar" style={{ background: '#a855f7' }} />
             </div>
           </div>
@@ -479,15 +479,15 @@ const DashboardTab = ({ data, loading, error }) => {
           {/* Side metrics list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Missing check-outs:</span>
+              <span>Active clock-ins (Working now):</span>
               <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{attStats.missing_checkouts}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Manual attendance edits:</span>
+              <span>Shifts with audit notes:</span>
               <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{attStats.manual_edits}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Attendance coverage:</span>
+              <span>Staff attendance rate:</span>
               <strong style={{ color: attStats.attendance_coverage >= 80 ? 'var(--success)' : 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
                 {attStats.attendance_coverage}%
               </strong>

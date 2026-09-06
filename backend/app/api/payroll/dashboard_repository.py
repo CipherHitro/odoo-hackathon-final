@@ -139,22 +139,26 @@ class DashboardRepository:
 
     @staticmethod
     async def get_status_split(db: AsyncSession) -> dict[str, int]:
-        """Real breakdown of payslips by status."""
+        """Real breakdown of payslips by mutually exclusive lifecycle stages."""
+        # 1. Paid: Payslips in payruns that have been disbursed/paid
         paid_res = await db.execute(
             select(func.count(Payslip.id))
-            .outerjoin(Payrun, Payslip.payrun_id == Payrun.id)
-            .where(or_(Payslip.status == PayslipStatus.DONE, Payrun.status == PayrunStatus.PAID))
+            .join(Payrun, Payslip.payrun_id == Payrun.id)
+            .where(Payrun.status == PayrunStatus.PAID)
         )
+        # 2. Done (Validated): Payslips in validated payruns ready for disbursement
         validated_res = await db.execute(
             select(func.count(Payslip.id))
             .join(Payrun, Payslip.payrun_id == Payrun.id)
             .where(Payrun.status == PayrunStatus.VALIDATED)
         )
+        # 3. Pending: Payslips in draft or computed payruns still in preparation
         pending_res = await db.execute(
             select(func.count(Payslip.id))
             .join(Payrun, Payslip.payrun_id == Payrun.id)
             .where(Payrun.status.in_([PayrunStatus.DRAFT, PayrunStatus.COMPUTED]))
         )
+        # 4. Warnings: Active warnings on any payslips
         warn_res = await db.execute(
             select(func.count(Payslip.id))
             .where(Payslip.has_warning == True)
